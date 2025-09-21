@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { setToken, type AuthResponse } from "./auth";
+import { useNavigate, Link } from "react-router-dom";
 
 type RegisterFormData = {
   name: string;
@@ -9,6 +10,7 @@ type RegisterFormData = {
 };
 
 export default function Register() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<RegisterFormData>({
     name: "",
     email: "",
@@ -57,7 +59,6 @@ export default function Register() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      // Placeholder POST; adjust URL when backend endpoint is available
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,8 +74,7 @@ export default function Register() {
       }
       const data: AuthResponse = await response.json();
       setToken(data.token);
-      setServerMessage("Registration successful");
-      setFormData({ name: "", email: "", password: "", confirmPassword: "" });
+      navigate("/app", { replace: true });
     } catch (err) {
       setServerMessage((err as Error).message);
     } finally {
@@ -154,7 +154,7 @@ export default function Register() {
       </form>
       {serverMessage ? <p>{serverMessage}</p> : null}
       <p>
-        Already have an account? <a href="/login">Login</a>
+        Already have an account? <Link to="/login">Login</Link>
       </p>
     </div>
   );

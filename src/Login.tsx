@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { setToken, type AuthResponse, getToken } from "./auth";
+import { useNavigate, Link } from "react-router-dom";
 
 type LoginFormData = {
   email: string;
@@ -7,9 +8,7 @@ type LoginFormData = {
 };
 
 export default function Login() {
-  const APP_ORIGIN =
-    (import.meta.env.VITE_APP_ORIGIN as string | undefined) ||
-    window.location.origin;
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: "",
@@ -24,11 +23,10 @@ export default function Login() {
   );
 
   useEffect(() => {
-    // If already authenticated, redirect to Home
     if (getToken()) {
-      window.location.replace(`${APP_ORIGIN}/`);
+      navigate("/app", { replace: true });
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     setServerMessage(null);
@@ -54,7 +52,6 @@ export default function Login() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      // Placeholder POST; adjust URL when backend endpoint is available
       const response = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -70,8 +67,7 @@ export default function Login() {
       }
       const data: AuthResponse = await response.json();
       setToken(data.token);
-      // Redirect to Home after successful login
-      window.location.replace(`${APP_ORIGIN}/`);
+      navigate("/app", { replace: true });
     } catch (err) {
       setServerMessage((err as Error).message);
     } finally {
@@ -119,7 +115,7 @@ export default function Login() {
       </form>
       {serverMessage ? <p>{serverMessage}</p> : null}
       <p>
-        Need an account? <a href="/register">Register</a>
+        Need an account? <Link to="/register">Register</Link>
       </p>
     </div>
   );
