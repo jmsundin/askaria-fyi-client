@@ -1,4 +1,4 @@
-name: Deploy Client
+name: Build and Deploy Client Application
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
       SSH_USER: ${{ secrets.CLIENT_SSH_USER }}
       SSH_PORT: ${{ secrets.CLIENT_SSH_PORT }}
       SSH_KEY: ${{ secrets.CLIENT_SSH_KEY }}
-      REMOTE_PATH: /var/www/client
+      REMOTE_PATH: /var/www
     steps:
       - name: Checkout
         uses: actions/checkout@v4
