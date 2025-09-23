@@ -43,8 +43,9 @@ jobs:
         shell: bash
         run: |
           mkdir -p ~/.ssh
-          printf "%s" "$SSH_KEY" > ~/.ssh/id_rsa
+          echo "$SSH_KEY" | sed 's/\\n/\n/g' | tr -d '\r' > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          ssh-keygen -y -f ~/.ssh/id_rsa >/dev/null || { echo "SSH key validation failed"; exit 1; }
           ssh-keyscan -p ${SSH_PORT:-22} "$SSH_HOST" >> ~/.ssh/known_hosts
 
       - name: Ensure remote directory
