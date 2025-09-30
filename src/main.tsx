@@ -6,17 +6,25 @@ import App from "./App.tsx";
 import Register from "./Register.tsx";
 import Login from "./Login.tsx";
 import Home from "./Home.tsx";
+import QuickStart from "./QuickStart.tsx";
 import ProtectedRoute from "./ProtectedRoute";
+import Calls from "./Calls.tsx";
 import { getToken } from "./auth";
 
-const rootElement = document.getElementById("root")!;
-
-function RedirectIfAuthenticated() {
+export function RedirectIfAuthenticated() {
   const token = getToken();
   if (token) {
     return <Navigate to="/app" replace />;
   }
   return null;
+}
+
+const rootElement = document.getElementById("root");
+
+if (!rootElement) {
+  throw new Error(
+    "Root element with id 'root' not found. The application cannot mount."
+  );
 }
 
 createRoot(rootElement).render(
@@ -46,7 +54,9 @@ createRoot(rootElement).render(
 
         {/* Protected app area */}
         <Route element={<ProtectedRoute />}>
+          <Route path="/app/quick-start" element={<QuickStart />} />
           <Route path="/app" element={<Home />} />
+          <Route path="/app/calls" element={<Calls />} />
         </Route>
 
         {/* Fallback */}

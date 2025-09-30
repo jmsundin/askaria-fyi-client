@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { setToken, type AuthResponse } from "./auth";
+import { authFetch, setToken, type AuthResponse } from "./auth";
 import { useNavigate, Link } from "react-router-dom";
 
 type RegisterFormData = {
@@ -59,9 +59,8 @@ export default function Register() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      const response = await fetch("/api/register", {
+      const response = await authFetch("/api/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,

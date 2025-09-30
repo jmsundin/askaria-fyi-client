@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { setToken, type AuthResponse, getToken } from "./auth";
+import { authFetch, setToken, type AuthResponse, getToken } from "./auth";
 import { useNavigate, Link } from "react-router-dom";
 
 type LoginFormData = {
@@ -52,14 +52,12 @@ export default function Login() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      const response = await fetch("/api/login", {
+      const response = await authFetch("/api/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
         }),
-        credentials: "include",
       });
       if (!response.ok) {
         const text = await response.text();
