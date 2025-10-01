@@ -11,7 +11,7 @@ export type AuthResponse = {
 
 const TOKEN_KEY = "jwt_token";
 const API_PREFIX = "/api";
-const apiBaseUrlFromEnv = import.meta.env.VITE_LARAVEL_API_URL as
+const apiBaseUrlFromEnv = import.meta.env.VITE_LARAVEL_URL as
   | string
   | undefined;
 
@@ -29,7 +29,7 @@ function normalizeBaseUrl(baseUrl: string): string {
 }
 
 function buildApiUrl(pathAndQuery: string): string {
-  assertNonEmptyEnvironmentVariable(apiBaseUrlFromEnv, "VITE_LARAVEL_API_URL");
+  assertNonEmptyEnvironmentVariable(apiBaseUrlFromEnv, "VITE_LARAVEL_URL");
   const normalizedApiBaseUrl = normalizeBaseUrl(apiBaseUrlFromEnv);
   return `${normalizedApiBaseUrl}${pathAndQuery}`;
 }
