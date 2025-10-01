@@ -1,18 +1,6 @@
 import "./App.css";
+import StaticLanding from "./StaticLanding";
 
-function App() {
-
-  return (
-    <>
-      <div>
-        <a href="/login">Login</a>
-      </div>
-
-      <div>
-        <a href="/register">Register</a>
-      </div>
-    </>
-  );
+export default function App() {
+  return <StaticLanding />;
 }
-
-export default App;

@@ -74,7 +74,7 @@ export default function Sidebar({ activeItem, businessLabel }: SidebarProps) {
               fontSize: "18px",
             }}
           >
-            R
+            A
           </span>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span style={{ fontSize: "22px", fontWeight: 700 }}>Aria</span>
