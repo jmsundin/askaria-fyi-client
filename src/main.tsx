@@ -10,6 +10,7 @@ import QuickStart from "./QuickStart.tsx";
 import ProtectedRoute from "./ProtectedRoute";
 import Calls from "./Calls.tsx";
 import Account from "./Account";
+import Integrations from "./Integrations";
 import { getToken } from "./auth";
 
 export function RedirectIfAuthenticated() {
@@ -59,6 +60,7 @@ createRoot(rootElement).render(
           <Route path="/app" element={<Home />} />
           <Route path="/app/calls" element={<Calls />} />
           <Route path="/app/account" element={<Account />} />
+          <Route path="/app/integrations" element={<Integrations />} />
         </Route>
 
         {/* Fallback */}

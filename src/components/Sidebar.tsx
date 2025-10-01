@@ -33,7 +33,12 @@ const sidebarNavigationItems: SidebarNavigationItem[] = [
     abbreviation: "AS",
     path: "/app",
   },
-  { key: "integrations", label: "Integrations", abbreviation: "IN" },
+  {
+    key: "integrations",
+    label: "Integrations",
+    abbreviation: "IN",
+    path: "/app/integrations",
+  },
   {
     key: "account",
     label: "Account",
