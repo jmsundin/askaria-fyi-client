@@ -179,8 +179,13 @@ export default function QuickStart() {
           }
           lastSavedCoreServicesRef.current = services;
           setCoreServicesStatus("saved");
-        } catch {
-          if (!(error instanceof DOMException && error.name === "AbortError")) {
+        } catch (coreServicesError) {
+          if (
+            !(
+              coreServicesError instanceof DOMException &&
+              coreServicesError.name === "AbortError"
+            )
+          ) {
             setCoreServicesStatus("error");
           }
         }
