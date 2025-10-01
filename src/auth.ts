@@ -25,7 +25,25 @@ function assertNonEmptyEnvironmentVariable(
 }
 
 function normalizeBaseUrl(baseUrl: string): string {
-  return baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+  const trimmedValue = baseUrl.trim();
+  const candidate = /^https?:\/\//i.test(trimmedValue)
+    ? trimmedValue
+    : `https://${trimmedValue.replace(/^\/+/u, "")}`;
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(candidate);
+  } catch (parseError) {
+    throw new Error(
+      `Invalid API base URL configured via VITE_LARAVEL_API_URL: ${candidate}`
+    );
+  }
+
+  const normalizedPathname = parsedUrl.pathname.endsWith("/")
+    ? parsedUrl.pathname.slice(0, -1)
+    : parsedUrl.pathname;
+
+  return `${parsedUrl.origin}${normalizedPathname}`;
 }
 
 function buildApiUrl(pathAndQuery: string): string {
