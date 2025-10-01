@@ -11,7 +11,7 @@ export type AuthResponse = {
 
 const TOKEN_KEY = "jwt_token";
 const API_PREFIX = "/api";
-const apiBaseUrlFromEnv = import.meta.env.VITE_LARAVEL_API_URL as
+const apiBaseUrlFromEnv = import.meta.env.VITE_LARAVEL_URL as
   | string
   | undefined;
 
@@ -35,7 +35,8 @@ function normalizeBaseUrl(baseUrl: string): string {
     parsedUrl = new URL(candidate);
   } catch (parseError) {
     throw new Error(
-      `Invalid API base URL configured via VITE_LARAVEL_URL: ${candidate}`
+      `Invalid API base URL configured via VITE_LARAVEL_URL: ${candidate}`,
+      { cause: parseError }
     );
   }
 

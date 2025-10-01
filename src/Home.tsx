@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { authFetch, clearToken, type AuthUser } from "./auth";
 import Sidebar from "./components/Sidebar";
 
@@ -70,7 +70,7 @@ export default function Home() {
     };
   }, []);
 
-  function handleLogout(event: React.MouseEvent<HTMLAnchorElement>) {
+  function handleLogout(event: MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
     clearToken();
     window.location.href = "/login";

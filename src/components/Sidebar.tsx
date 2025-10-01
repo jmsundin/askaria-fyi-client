@@ -34,7 +34,12 @@ const sidebarNavigationItems: SidebarNavigationItem[] = [
     path: "/app",
   },
   { key: "integrations", label: "Integrations", abbreviation: "IN" },
-  { key: "account", label: "Account", abbreviation: "AC" },
+  {
+    key: "account",
+    label: "Account",
+    abbreviation: "AC",
+    path: "/app/account",
+  },
 ];
 
 export default function Sidebar({ activeItem, businessLabel }: SidebarProps) {
