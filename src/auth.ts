@@ -11,7 +11,7 @@ export type AuthResponse = {
 
 const TOKEN_KEY = "jwt_token";
 const API_PREFIX = "/api";
-const apiBaseUrlFromEnv = import.meta.env.VITE_LARAVEL_URL as
+const apiBaseUrlFromEnv = import.meta.env.VITE_LARAVEL_API_URL as
   | string
   | undefined;
 
@@ -35,15 +35,23 @@ function normalizeBaseUrl(baseUrl: string): string {
     parsedUrl = new URL(candidate);
   } catch (parseError) {
     throw new Error(
-      `Invalid API base URL configured via VITE_LARAVEL_API_URL: ${candidate}`
+      `Invalid API base URL configured via VITE_LARAVEL_URL: ${candidate}`
     );
   }
 
-  const normalizedPathname = parsedUrl.pathname.endsWith("/")
-    ? parsedUrl.pathname.slice(0, -1)
-    : parsedUrl.pathname;
+  const normalizedPathname = parsedUrl.pathname.replace(/\/+$/u, "");
 
-  return `${parsedUrl.origin}${normalizedPathname}`;
+  if (normalizedPathname === "" || normalizedPathname === "/") {
+    return parsedUrl.origin;
+  }
+
+  if (normalizedPathname === "/api") {
+    return parsedUrl.origin;
+  }
+
+  throw new Error(
+    `VITE_LARAVEL_URL must not include a path. Remove '${normalizedPathname}' from ${candidate}.`
+  );
 }
 
 function buildApiUrl(pathAndQuery: string): string {
