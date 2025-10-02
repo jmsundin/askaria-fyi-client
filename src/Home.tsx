@@ -56,7 +56,7 @@ export default function Home() {
   useEffect(() => {
     let isComponentMounted = true;
     (async () => {
-      const response = await authFetch("/api/me");
+      const response = await authFetch("/me");
       if (!response.ok) {
         clearToken();
         window.location.href = "/login";

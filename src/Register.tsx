@@ -132,7 +132,7 @@ export default function Register() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      const response = await authFetch("/api/register", {
+      const response = await authFetch("/register", {
         method: "POST",
         body: JSON.stringify({
           name: formData.name,

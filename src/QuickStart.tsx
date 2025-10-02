@@ -106,7 +106,7 @@ export default function QuickStart() {
       }
       const normalizedPayload = normalizePayload(payload);
       try {
-        const response = await authFetch("/api/agent-profile", {
+        const response = await authFetch("/agent-profile", {
           method: "PUT",
           body: JSON.stringify({
             business_name: normalizedPayload.businessName,
@@ -169,7 +169,7 @@ export default function QuickStart() {
         coreServicesAbortControllerRef.current = abortController;
         setCoreServicesStatus("saving");
         try {
-          const response = await authFetch("/api/agent-profile/core-services", {
+          const response = await authFetch("/agent-profile/core-services", {
             method: "PUT",
             body: JSON.stringify({ core_services: services }),
             signal: abortController.signal,
@@ -213,7 +213,7 @@ export default function QuickStart() {
     let isComponentMounted = true;
     (async () => {
       try {
-        const meResponse = await authFetch("/api/me");
+        const meResponse = await authFetch("/me");
         if (!meResponse.ok) {
           clearToken();
           window.location.href = "/login";
@@ -232,7 +232,7 @@ export default function QuickStart() {
         };
 
         try {
-          const profileResponse = await authFetch("/api/agent-profile");
+          const profileResponse = await authFetch("/agent-profile");
           if (profileResponse.status === 401) {
             clearToken();
             window.location.href = "/login";

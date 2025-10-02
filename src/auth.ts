@@ -10,7 +10,6 @@ export type AuthResponse = {
 };
 
 const TOKEN_KEY = "jwt_token";
-const API_PREFIX = "/api";
 const apiBaseUrlFromEnv = import.meta.env.VITE_LARAVEL_URL as
   | string
   | undefined;
@@ -46,48 +45,26 @@ function normalizeBaseUrl(baseUrl: string): string {
     return parsedUrl.origin;
   }
 
-  if (normalizedPathname === "/api") {
-    return parsedUrl.origin;
-  }
-
   throw new Error(
     `VITE_LARAVEL_URL must not include a path. Remove '${normalizedPathname}' from ${candidate}.`
   );
 }
 
+function isAbsoluteUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value);
+}
+
+function ensureLeadingSlash(value: string): string {
+  return value.startsWith("/") ? value : `/${value}`;
+}
+
 function buildApiUrl(pathAndQuery: string): string {
   assertNonEmptyEnvironmentVariable(apiBaseUrlFromEnv, "VITE_LARAVEL_URL");
   const normalizedApiBaseUrl = normalizeBaseUrl(apiBaseUrlFromEnv);
-  return `${normalizedApiBaseUrl}${pathAndQuery}`;
-}
-
-function maybeResolveApiUrl(url: string): string {
-  return url.startsWith(API_PREFIX) ? buildApiUrl(url) : url;
-}
-
-function resolveApiRequestInput(input: RequestInfo | URL): RequestInfo | URL {
-  if (typeof input === "string") {
-    return maybeResolveApiUrl(input);
+  if (isAbsoluteUrl(pathAndQuery)) {
+    return pathAndQuery;
   }
-
-  if (input instanceof URL) {
-    const pathWithQuery = `${input.pathname}${input.search}${input.hash}`;
-    if (!pathWithQuery.startsWith(API_PREFIX)) {
-      return input;
-    }
-    return new URL(buildApiUrl(pathWithQuery));
-  }
-
-  if (input instanceof Request) {
-    if (input.url.startsWith(API_PREFIX)) {
-      throw new Error(
-        "authFetch does not support Request instances with relative /api URLs."
-      );
-    }
-    return input;
-  }
-
-  return input;
+  return `${normalizedApiBaseUrl}${ensureLeadingSlash(pathAndQuery)}`;
 }
 
 type AuthFetchOptions = RequestInit & {
@@ -148,7 +125,7 @@ export async function authFetch(
   init: AuthFetchOptions = {}
 ) {
   const fetchOptions = createAuthFetchOptions(init);
-  const resolvedInput = resolveApiRequestInput(input);
+  const resolvedInput = resolveAuthFetchInput(input);
   const response = await fetch(resolvedInput, {
     ...fetchOptions,
   });
@@ -156,4 +133,25 @@ export async function authFetch(
     clearToken();
   }
   return response;
+}
+
+function resolveAuthFetchInput(input: RequestInfo | URL): RequestInfo | URL {
+  if (typeof input === "string") {
+    return buildApiUrl(input);
+  }
+
+  if (input instanceof URL) {
+    return input;
+  }
+
+  if (input instanceof Request) {
+    if (!isAbsoluteUrl(input.url)) {
+      throw new Error(
+        "authFetch requires Request instances to provide absolute URLs."
+      );
+    }
+    return input;
+  }
+
+  return input;
 }

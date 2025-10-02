@@ -132,7 +132,7 @@ export default function Login() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      const response = await authFetch("/api/login", {
+      const response = await authFetch("/login", {
         method: "POST",
         body: JSON.stringify({
           email: formData.email,

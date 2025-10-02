@@ -103,7 +103,7 @@ export default function Integrations() {
   useEffect(() => {
     let isMounted = true;
     (async () => {
-      const response = await authFetch("/api/me");
+      const response = await authFetch("/me");
       if (!response.ok) {
         clearToken();
         window.location.href = "/login";
