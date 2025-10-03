@@ -11,10 +11,17 @@ import Sidebar from "./components/Sidebar";
 import { authFetch, clearToken, type AuthUser } from "./auth";
 import { debounce } from "lodash-es";
 
+type AgentProfileFaqEntry = {
+  question: string;
+  answer: string;
+};
+
 type AgentProfilePayload = {
   businessName: string;
   businessPhoneNumber: string;
   businessOverview: string;
+  coreServices: string[];
+  faqEntries: AgentProfileFaqEntry[];
 };
 
 type AgentProfileResponse = {
@@ -22,13 +29,122 @@ type AgentProfileResponse = {
   business_phone_number: string | null;
   business_overview: string | null;
   core_services?: string[];
+  faq?: Array<{
+    question?: string | null;
+    answer?: string | null;
+  }>;
 };
+
+function normalizeStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) =>
+        typeof item === "string" ? item.trim() : String(item).trim()
+      )
+      .filter((item) => item !== "");
+  }
+  if (typeof value === "string") {
+    const trimmedValue = value.trim();
+    if (trimmedValue === "") {
+      return [];
+    }
+    try {
+      const parsed = JSON.parse(trimmedValue);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((item) =>
+            typeof item === "string" ? item.trim() : String(item).trim()
+          )
+          .filter((item) => item !== "");
+      }
+    } catch {
+      // fall through to treat as single entry
+    }
+    return [trimmedValue];
+  }
+  if (value === null || value === undefined) {
+    return [];
+  }
+  return [String(value).trim()].filter((item) => item !== "");
+}
+
+function sanitizeFaqEntries(
+  entries: AgentProfileFaqEntry[]
+): AgentProfileFaqEntry[] {
+  return entries
+    .map((entry) => ({
+      question: entry.question.trim(),
+      answer: entry.answer.trim(),
+    }))
+    .filter((entry) => entry.question !== "" || entry.answer !== "");
+}
+
+function coerceFaqEntries(
+  entries: AgentProfileResponse["faq"]
+): AgentProfileFaqEntry[] {
+  if (!entries) {
+    return [];
+  }
+
+  let iterableEntries: unknown = entries;
+  if (!Array.isArray(iterableEntries)) {
+    if (typeof iterableEntries === "string") {
+      const trimmed = iterableEntries.trim();
+      if (trimmed === "") {
+        return [];
+      }
+      try {
+        const parsed = JSON.parse(trimmed);
+        iterableEntries = Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        iterableEntries = [trimmed];
+      }
+    } else {
+      iterableEntries = [iterableEntries];
+    }
+  }
+
+  const normalizedEntries: AgentProfileFaqEntry[] = [];
+  for (const rawEntry of iterableEntries as unknown[]) {
+    if (!rawEntry) {
+      continue;
+    }
+    if (typeof rawEntry === "string") {
+      const trimmedQuestion = rawEntry.trim();
+      if (trimmedQuestion !== "") {
+        normalizedEntries.push({ question: trimmedQuestion, answer: "" });
+      }
+      continue;
+    }
+    if (typeof rawEntry === "object") {
+      const questionValue =
+        (rawEntry as { question?: unknown }).question === null ||
+        (rawEntry as { question?: unknown }).question === undefined
+          ? ""
+          : String((rawEntry as { question?: unknown }).question).trim();
+      const answerValue =
+        (rawEntry as { answer?: unknown }).answer === null ||
+        (rawEntry as { answer?: unknown }).answer === undefined
+          ? ""
+          : String((rawEntry as { answer?: unknown }).answer).trim();
+      if (questionValue !== "" || answerValue !== "") {
+        normalizedEntries.push({
+          question: questionValue,
+          answer: answerValue,
+        });
+      }
+    }
+  }
+  return normalizedEntries;
+}
 
 function normalizePayload(payload: AgentProfilePayload): AgentProfilePayload {
   return {
     businessName: payload.businessName.trim(),
     businessPhoneNumber: payload.businessPhoneNumber.trim(),
     businessOverview: payload.businessOverview.trim(),
+    coreServices: normalizeStringArray(payload.coreServices),
+    faqEntries: sanitizeFaqEntries(payload.faqEntries),
   };
 }
 
@@ -38,14 +154,35 @@ function arePayloadsEqual(
 ): boolean {
   if (firstPayload === secondPayload) return true;
   if (firstPayload === null || secondPayload === null) return false;
-  return (
-    firstPayload.businessName === secondPayload.businessName &&
-    firstPayload.businessPhoneNumber === secondPayload.businessPhoneNumber &&
-    firstPayload.businessOverview === secondPayload.businessOverview
-  );
+  const firstCoreServices = normalizeStringArray(firstPayload.coreServices);
+  const secondCoreServices = normalizeStringArray(secondPayload.coreServices);
+  if (
+    firstPayload.businessName !== secondPayload.businessName ||
+    firstPayload.businessPhoneNumber !== secondPayload.businessPhoneNumber ||
+    firstPayload.businessOverview !== secondPayload.businessOverview ||
+    firstCoreServices.length !== secondCoreServices.length
+  ) {
+    return false;
+  }
+  if (
+    firstCoreServices.some(
+      (service, index) => service !== secondCoreServices[index]
+    )
+  ) {
+    return false;
+  }
+  const firstFaqEntries = sanitizeFaqEntries(firstPayload.faqEntries);
+  const secondFaqEntries = sanitizeFaqEntries(secondPayload.faqEntries);
+  if (firstFaqEntries.length !== secondFaqEntries.length) {
+    return false;
+  }
+  return firstFaqEntries.every((entry, index) => {
+    const other = secondFaqEntries[index];
+    return entry.question === other.question && entry.answer === other.answer;
+  });
 }
 
-const SAVE_DEBOUNCE_DELAY_MS = 800;
+const SAVE_DEBOUNCE_DELAY_MS = 1600;
 
 const ONBOARDING_STEPS = [
   { id: 1, label: "Train", status: "complete" as const },
@@ -56,13 +193,10 @@ const ONBOARDING_STEPS = [
 
 const BUSINESS_OVERVIEW_CHARACTER_LIMIT = 500;
 const TOTAL_FORM_STEPS = 8;
-const MAX_RENDERED_FORM_STEP = 2;
+const MAX_RENDERED_FORM_STEP = 3;
 const FORM_FIELD_BACKGROUND_COLOR = "#f9f6ff";
-const FORM_STEP_PROGRESS_WIDTH: Record<number, number> = {
-  1: 25,
-  2: 50,
-};
-const CORE_SERVICES_AUTOSAVE_DEBOUNCE_MS = 800;
+const CORE_SERVICES_AUTOSAVE_DEBOUNCE_MS = 1600;
+const FAQ_AUTOSAVE_DEBOUNCE_MS = 1600;
 
 export default function QuickStart() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -71,7 +205,6 @@ export default function QuickStart() {
   const [businessOverview, setBusinessOverview] = useState("");
   const [hasLoadedProfile, setHasLoadedProfile] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [didSave, setDidSave] = useState(false);
   const [didFailSave, setDidFailSave] = useState(false);
   const [isBusinessNameTouched, setIsBusinessNameTouched] = useState(false);
   const [isBusinessPhoneNumberTouched, setIsBusinessPhoneNumberTouched] =
@@ -81,24 +214,30 @@ export default function QuickStart() {
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [activeFormStep, setActiveFormStep] = useState(1);
   const [coreServices, setCoreServices] = useState<string[]>([]);
+  const [faqEntries, setFaqEntries] = useState<AgentProfileFaqEntry[]>([]);
   const [coreServiceInputValue, setCoreServiceInputValue] = useState("");
   const [coreServicesErrorMessage, setCoreServicesErrorMessage] = useState("");
   const [coreServicesStatus, setCoreServicesStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+  const [faqStatus, setFaqStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
   const coreServicesAbortControllerRef = useRef<AbortController | null>(null);
+  const faqAbortControllerRef = useRef<AbortController | null>(null);
   const lastSavedCoreServicesRef = useRef<string[]>([]);
   const saveRequestSequenceRef = useRef(0);
   const activeFormStepRef = useRef(1);
   const saveSuccessTimeoutRef = useRef<number | null>(null);
   const lastPersistedPayloadRef = useRef<AgentProfilePayload | null>(null);
+  const [hasPendingProfileChanges, setHasPendingProfileChanges] =
+    useState(false);
 
   const executeSave = useCallback(
     async (payload: AgentProfilePayload) => {
       const nextSequence = saveRequestSequenceRef.current + 1;
       saveRequestSequenceRef.current = nextSequence;
       setIsSaving(true);
-      setDidSave(false);
       setDidFailSave(false);
       if (saveSuccessTimeoutRef.current !== null) {
         window.clearTimeout(saveSuccessTimeoutRef.current);
@@ -115,6 +254,8 @@ export default function QuickStart() {
                 ? null
                 : normalizedPayload.businessPhoneNumber,
             business_overview: normalizedPayload.businessOverview,
+            core_services: normalizedPayload.coreServices,
+            faq: normalizedPayload.faqEntries,
           }),
         });
         if (!response.ok) {
@@ -127,13 +268,13 @@ export default function QuickStart() {
             : previousUser
         );
         if (saveRequestSequenceRef.current === nextSequence) {
-          setDidSave(true);
+          setDidFailSave(false);
+          setHasPendingProfileChanges(false);
           if (activeFormStepRef.current === 1) {
             lastSavedCoreServicesRef.current = coreServices;
           }
           if (activeFormStepRef.current !== 1) {
             saveSuccessTimeoutRef.current = window.setTimeout(() => {
-              setDidSave(false);
               saveSuccessTimeoutRef.current = null;
             }, 3000);
           }
@@ -148,7 +289,7 @@ export default function QuickStart() {
         }
       }
     },
-    [coreServices]
+    [coreServices, faqEntries]
   );
 
   const debouncedSaveAgentProfile = useMemo(
@@ -169,16 +310,17 @@ export default function QuickStart() {
         coreServicesAbortControllerRef.current = abortController;
         setCoreServicesStatus("saving");
         try {
-          const response = await authFetch("/agent-profile/core-services", {
-            method: "PUT",
-            body: JSON.stringify({ core_services: services }),
-            signal: abortController.signal,
+          await executeSave({
+            businessName,
+            businessPhoneNumber,
+            businessOverview,
+            coreServices: services,
+            faqEntries,
           });
-          if (!response.ok) {
-            throw new Error("Failed to save core services");
+          if (!abortController.signal.aborted) {
+            lastSavedCoreServicesRef.current = services;
+            setCoreServicesStatus("saved");
           }
-          lastSavedCoreServicesRef.current = services;
-          setCoreServicesStatus("saved");
         } catch (coreServicesError) {
           if (
             !(
@@ -186,11 +328,60 @@ export default function QuickStart() {
               coreServicesError.name === "AbortError"
             )
           ) {
-            setCoreServicesStatus("error");
+            if (!abortController.signal.aborted) {
+              setCoreServicesStatus("error");
+            }
           }
         }
       }, CORE_SERVICES_AUTOSAVE_DEBOUNCE_MS),
-    []
+    [
+      executeSave,
+      businessName,
+      businessPhoneNumber,
+      businessOverview,
+      faqEntries,
+    ]
+  );
+
+  const debouncedSaveFaq = useMemo(
+    () =>
+      debounce(async (entries: AgentProfileFaqEntry[]) => {
+        if (faqAbortControllerRef.current) {
+          faqAbortControllerRef.current.abort();
+        }
+        const abortController = new AbortController();
+        faqAbortControllerRef.current = abortController;
+        setFaqStatus("saving");
+        try {
+          await executeSave({
+            businessName,
+            businessPhoneNumber,
+            businessOverview,
+            coreServices,
+            faqEntries: entries,
+          });
+          if (!abortController.signal.aborted) {
+            setFaqStatus("saved");
+          }
+        } catch (faqError) {
+          if (
+            !(
+              faqError instanceof DOMException && faqError.name === "AbortError"
+            )
+          ) {
+            if (!abortController.signal.aborted) {
+              setFaqStatus("error");
+            }
+          }
+        }
+      }, FAQ_AUTOSAVE_DEBOUNCE_MS),
+    [
+      executeSave,
+      businessName,
+      businessPhoneNumber,
+      businessOverview,
+      coreServices,
+    ]
   );
 
   useEffect(() => {
@@ -201,9 +392,11 @@ export default function QuickStart() {
         saveSuccessTimeoutRef.current = null;
       }
       debouncedSaveCoreServices.cancel();
+      debouncedSaveFaq.cancel();
       coreServicesAbortControllerRef.current?.abort();
+      faqAbortControllerRef.current?.abort();
     };
-  }, [debouncedSaveAgentProfile, debouncedSaveCoreServices]);
+  }, [debouncedSaveAgentProfile, debouncedSaveCoreServices, debouncedSaveFaq]);
 
   useEffect(() => {
     activeFormStepRef.current = activeFormStep;
@@ -229,6 +422,8 @@ export default function QuickStart() {
           businessName: authenticatedUser.name ?? "",
           businessPhoneNumber: "",
           businessOverview: "",
+          coreServices: [],
+          faqEntries: [],
         };
 
         try {
@@ -247,6 +442,8 @@ export default function QuickStart() {
                 profile.business_name ?? authenticatedUser.name ?? "",
               businessPhoneNumber: profile.business_phone_number ?? "",
               businessOverview: profile.business_overview ?? "",
+              coreServices: profile.core_services ?? [],
+              faqEntries: coerceFaqEntries(profile.faq),
             };
           }
         } catch (profileError) {
@@ -262,6 +459,8 @@ export default function QuickStart() {
         setBusinessName(normalizedInitialPayload.businessName);
         setBusinessPhoneNumber(normalizedInitialPayload.businessPhoneNumber);
         setBusinessOverview(normalizedInitialPayload.businessOverview);
+        setCoreServices(normalizedInitialPayload.coreServices);
+        setFaqEntries(normalizedInitialPayload.faqEntries);
         lastPersistedPayloadRef.current = normalizedInitialPayload;
         setHasLoadedProfile(true);
       } catch (error) {
@@ -277,28 +476,38 @@ export default function QuickStart() {
   }, []);
 
   useEffect(() => {
+    if (!hasLoadedProfile || activeFormStep !== 3) {
+      return;
+    }
+    debouncedSaveFaq(faqEntries);
+  }, [faqEntries, hasLoadedProfile, activeFormStep, debouncedSaveFaq]);
+
+  useEffect(() => {
     if (!hasLoadedProfile) {
       return;
     }
-    const pendingPayload = normalizePayload({
+    const payload = normalizePayload({
       businessName,
       businessPhoneNumber,
       businessOverview,
+      coreServices,
+      faqEntries,
     });
-    if (
-      pendingPayload.businessName === "" ||
-      pendingPayload.businessOverview === ""
-    ) {
+    if (payload.businessName === "" || payload.businessOverview === "") {
       return;
     }
-    if (arePayloadsEqual(lastPersistedPayloadRef.current, pendingPayload)) {
+    if (arePayloadsEqual(lastPersistedPayloadRef.current, payload)) {
       return;
     }
-    debouncedSaveAgentProfile(pendingPayload);
+    setDidFailSave(false);
+    setHasPendingProfileChanges(true);
+    debouncedSaveAgentProfile(payload);
   }, [
     businessName,
     businessPhoneNumber,
     businessOverview,
+    coreServices,
+    faqEntries,
     hasLoadedProfile,
     debouncedSaveAgentProfile,
   ]);
@@ -361,6 +570,8 @@ export default function QuickStart() {
       businessName,
       businessPhoneNumber,
       businessOverview,
+      coreServices,
+      faqEntries,
     });
     debouncedSaveAgentProfile.cancel();
     await executeSave(payload);
@@ -372,28 +583,35 @@ export default function QuickStart() {
       setBusinessName(lastPersistedPayload.businessName);
       setBusinessPhoneNumber(lastPersistedPayload.businessPhoneNumber);
       setBusinessOverview(lastPersistedPayload.businessOverview);
+      setCoreServices(lastPersistedPayload.coreServices);
+      setFaqEntries(lastPersistedPayload.faqEntries);
     } else {
       setBusinessName(user?.name ?? "");
       setBusinessPhoneNumber("");
       setBusinessOverview("");
+      setCoreServices([]);
+      setFaqEntries([]);
     }
     setHasAttemptedSubmit(false);
     setIsBusinessNameTouched(false);
     setIsBusinessPhoneNumberTouched(false);
     setIsBusinessOverviewTouched(false);
     setDidFailSave(false);
-    setDidSave(false);
     setActiveFormStep(1);
     setCoreServices([]);
     setCoreServiceInputValue("");
     setCoreServicesErrorMessage("");
     setCoreServicesStatus("idle");
+    setFaqStatus("idle");
+    setHasPendingProfileChanges(false);
   }
 
   function handleBusinessNameChange(event: ChangeEvent<HTMLInputElement>) {
     setBusinessName(event.target.value);
     if (activeFormStep === 1) {
       setDidSave(false);
+      setDidFailSave(false);
+      setHasPendingProfileChanges(true);
     }
   }
 
@@ -403,6 +621,8 @@ export default function QuickStart() {
     setBusinessPhoneNumber(event.target.value);
     if (activeFormStep === 1) {
       setDidSave(false);
+      setDidFailSave(false);
+      setHasPendingProfileChanges(true);
     }
   }
 
@@ -412,6 +632,8 @@ export default function QuickStart() {
     setBusinessOverview(event.target.value);
     if (activeFormStep === 1) {
       setDidSave(false);
+      setDidFailSave(false);
+      setHasPendingProfileChanges(true);
     }
   }
 
@@ -470,18 +692,77 @@ export default function QuickStart() {
     commitCoreService();
   }
 
+  function handleAddFaqEntry() {
+    setFaqEntries((previousEntries) => [
+      ...previousEntries,
+      { question: "", answer: "" },
+    ]);
+    setFaqStatus("idle");
+  }
+
+  function handleRemoveFaqEntry(indexToRemove: number) {
+    setFaqEntries((previousEntries) => {
+      const nextEntries = previousEntries.filter(
+        (_, entryIndex) => entryIndex !== indexToRemove
+      );
+      debouncedSaveFaq(nextEntries);
+      return nextEntries;
+    });
+  }
+
+  function handleFaqQuestionChange(
+    indexToUpdate: number,
+    event: ChangeEvent<HTMLInputElement>
+  ) {
+    const { value } = event.target;
+    setFaqEntries((previousEntries) => {
+      const nextEntries = previousEntries.map((entry, entryIndex) =>
+        entryIndex === indexToUpdate ? { ...entry, question: value } : entry
+      );
+      setFaqStatus("saving");
+      debouncedSaveFaq(nextEntries);
+      return nextEntries;
+    });
+  }
+
+  function handleFaqAnswerChange(
+    indexToUpdate: number,
+    event: ChangeEvent<HTMLTextAreaElement>
+  ) {
+    const { value } = event.target;
+    setFaqEntries((previousEntries) => {
+      const nextEntries = previousEntries.map((entry, entryIndex) =>
+        entryIndex === indexToUpdate ? { ...entry, answer: value } : entry
+      );
+      setFaqStatus("saving");
+      debouncedSaveFaq(nextEntries);
+      return nextEntries;
+    });
+  }
+
   function handleGoToNextStep() {
-    if (activeFormStep !== 1 || !didSave) {
+    if (activeFormStep >= MAX_RENDERED_FORM_STEP) {
+      return;
+    }
+    if (activeFormStep === 1) {
+      if ((hasPendingProfileChanges && !didFailSave) || isSaving) {
+        return;
+      }
+      setActiveFormStep((previousStep) =>
+        Math.min(previousStep + 1, MAX_RENDERED_FORM_STEP)
+      );
+      setHasAttemptedSubmit(false);
+      setIsBusinessNameTouched(false);
+      setIsBusinessPhoneNumberTouched(false);
+      setIsBusinessOverviewTouched(false);
+      return;
+    }
+    if (activeFormStep === 2 && (isSaving || coreServicesStatus === "saving")) {
       return;
     }
     setActiveFormStep((previousStep) =>
       Math.min(previousStep + 1, MAX_RENDERED_FORM_STEP)
     );
-    setDidSave(false);
-    setHasAttemptedSubmit(false);
-    setIsBusinessNameTouched(false);
-    setIsBusinessPhoneNumberTouched(false);
-    setIsBusinessOverviewTouched(false);
   }
 
   function handleGoToPreviousStep() {
@@ -498,6 +779,8 @@ export default function QuickStart() {
 
   const sidebarBusinessLabel = user?.name ?? "Your Business";
   const isFirstFormStep = activeFormStep === 1;
+  const isCoreServicesStep = activeFormStep === 2;
+  const isFaqStep = activeFormStep === 3;
 
   const formStepCopy = isFirstFormStep
     ? {
@@ -506,32 +789,51 @@ export default function QuickStart() {
         description:
           "This information helps Aria introduce your business and respond accurately to your callers.",
       }
-    : {
+    : isCoreServicesStep
+    ? {
         title:
           "Here are the core services we've got for your business. Does this look right?",
         description:
           "Type in the offerings you want Aria to highlight so callers understand what you do.",
+      }
+    : {
+        title:
+          "Add FAQs about your business so your agent can answer common questions easily.",
+        description:
+          "Add some common questions to teach your agent about your business. You can add more and update them later.",
       };
 
   const progressLabel = `${activeFormStep}/${TOTAL_FORM_STEPS}`;
   const progressFillPercentage =
-    FORM_STEP_PROGRESS_WIDTH[activeFormStep] !== undefined
-      ? FORM_STEP_PROGRESS_WIDTH[activeFormStep]
-      : Math.min(100, Math.max(0, (activeFormStep / TOTAL_FORM_STEPS) * 100));
+    (Math.min(Math.max(activeFormStep, 0), TOTAL_FORM_STEPS) /
+      TOTAL_FORM_STEPS) *
+    100;
   const shouldShowNextButton =
-    isFirstFormStep && didSave && !isSaving && activeFormStep === 1;
+    isFirstFormStep && (!hasPendingProfileChanges || didFailSave) && !isSaving;
+
+  const shouldEnableSaveButton =
+    isFirstFormStep && hasPendingProfileChanges && !didFailSave && !isSaving;
 
   const primaryButtonLabel = isSaving
     ? "Saving..."
     : shouldShowNextButton
     ? "Next"
-    : didSave
-    ? "Saved"
-    : "Save Changes";
-  const primaryButtonType: "button" | "submit" = shouldShowNextButton
-    ? "button"
-    : "submit";
+    : shouldEnableSaveButton
+    ? "Save Changes"
+    : didFailSave
+    ? "Next"
+    : "Saved";
+
+  const primaryButtonType: "button" | "submit" = shouldEnableSaveButton
+    ? "submit"
+    : "button";
+  const isPrimaryButtonDisabled =
+    !shouldEnableSaveButton && !shouldShowNextButton && !didFailSave;
   const primaryButtonOnClick = shouldShowNextButton
+    ? handleGoToNextStep
+    : shouldEnableSaveButton
+    ? undefined
+    : didFailSave
     ? handleGoToNextStep
     : undefined;
 
@@ -988,7 +1290,7 @@ export default function QuickStart() {
                 </div>
               </>
             ) : null}
-            {activeFormStep > 1 && (
+            {isCoreServicesStep && (
               <div
                 style={{
                   display: "flex",
@@ -1191,6 +1493,227 @@ export default function QuickStart() {
                 ) : null}
               </div>
             )}
+            {isFaqStep ? (
+              <>
+                {faqEntries.length === 0 ? (
+                  <>
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        width: "72px",
+                        height: "72px",
+                        borderRadius: "24px",
+                        background:
+                          "linear-gradient(135deg, #ede7ff 0%, #f9f5ff 100%)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "32px",
+                        color: "#5b21b6",
+                        fontWeight: 700,
+                      }}
+                    >
+                      ?
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={handleAddFaqEntry}
+                      style={{
+                        borderRadius: "999px",
+                        border: "1px solid #d7c9f4",
+                        backgroundColor: "#f8f4ff",
+                        color: "#5a2bc7",
+                        fontWeight: 600,
+                        padding: "14px 28px",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <span aria-hidden="true" style={{ fontSize: "18px" }}>
+                        +
+                      </span>
+                      Add Question
+                    </button>
+                  </>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "24px",
+                    }}
+                  >
+                    {faqEntries.map((entry, index) => (
+                      <div
+                        key={`faq-entry-${index}`}
+                        style={{
+                          borderRadius: "20px",
+                          border: "1px solid #e6dcfa",
+                          backgroundColor: "#fdfaff",
+                          padding: "24px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "18px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "12px",
+                          }}
+                        >
+                          <label
+                            htmlFor={`faq-question-${index}`}
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: 600,
+                              color: "#3a245d",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                            }}
+                          >
+                            <span>Question</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveFaqEntry(index)}
+                              style={{
+                                border: "none",
+                                background: "transparent",
+                                color: "#a855f7",
+                                cursor: "pointer",
+                                fontSize: "18px",
+                                lineHeight: 1,
+                              }}
+                              aria-label="Remove question"
+                            >
+                              ×
+                            </button>
+                          </label>
+                          <input
+                            id={`faq-question-${index}`}
+                            type="text"
+                            placeholder="Add question here..."
+                            value={entry.question}
+                            onChange={(event) =>
+                              handleFaqQuestionChange(index, event)
+                            }
+                            style={{
+                              borderRadius: "14px",
+                              border: "1px solid #d8c9f4",
+                              padding: "16px 18px",
+                              fontSize: "16px",
+                              color: "#2d1f47",
+                              backgroundColor: "#ffffff",
+                              outline: "none",
+                            }}
+                          />
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "12px",
+                          }}
+                        >
+                          <label
+                            htmlFor={`faq-answer-${index}`}
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: 600,
+                              color: "#3a245d",
+                            }}
+                          >
+                            Answer
+                          </label>
+                          <textarea
+                            id={`faq-answer-${index}`}
+                            rows={4}
+                            placeholder="Add answer here..."
+                            value={entry.answer}
+                            onChange={(event) =>
+                              handleFaqAnswerChange(index, event)
+                            }
+                            style={{
+                              borderRadius: "16px",
+                              border: "1px solid #d8c9f4",
+                              padding: "16px 18px",
+                              fontSize: "15px",
+                              color: "#2d1f47",
+                              backgroundColor: "#ffffff",
+                              resize: "vertical",
+                              minHeight: "140px",
+                              outline: "none",
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={handleAddFaqEntry}
+                      style={{
+                        borderRadius: "999px",
+                        border: "1px solid #d7c9f4",
+                        background:
+                          "linear-gradient(90deg, rgba(124, 58, 237, 0.08), rgba(236, 72, 153, 0.08))",
+                        color: "#5a2bc7",
+                        fontWeight: 600,
+                        padding: "14px 28px",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <span aria-hidden="true" style={{ fontSize: "18px" }}>
+                        +
+                      </span>
+                      Add Another Question
+                    </button>
+                    {faqStatus === "saving" ? (
+                      <span
+                        style={{
+                          color: "#6f5b91",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          paddingLeft: "4px",
+                        }}
+                      >
+                        Saving FAQs...
+                      </span>
+                    ) : faqStatus === "saved" ? (
+                      <span
+                        style={{
+                          color: "#4c1d95",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          paddingLeft: "4px",
+                        }}
+                      >
+                        FAQs saved.
+                      </span>
+                    ) : faqStatus === "error" ? (
+                      <span
+                        style={{
+                          color: "#d6456d",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          paddingLeft: "4px",
+                        }}
+                      >
+                        Could not save FAQs. Please try again.
+                      </span>
+                    ) : null}
+                  </div>
+                )}
+              </>
+            ) : null}
 
             <div
               style={{
@@ -1232,30 +1755,72 @@ export default function QuickStart() {
                   />
                 </div>
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  gap: "16px",
-                  flexWrap: "wrap",
-                  alignItems: "center",
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={handleCancel}
+              {isFirstFormStep ? (
+                <div
                   style={{
-                    borderRadius: "999px",
-                    border: "1px solid #d7c9f4",
-                    backgroundColor: "transparent",
-                    color: "#5a2bc7",
-                    fontWeight: 600,
-                    padding: "14px 26px",
-                    cursor: "pointer",
+                    display: "flex",
+                    gap: "16px",
+                    flexWrap: "wrap",
+                    alignItems: "center",
                   }}
                 >
-                  Cancel
-                </button>
-                {activeFormStep > 1 ? (
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    style={{
+                      borderRadius: "999px",
+                      border: "1px solid #d7c9f4",
+                      backgroundColor: "transparent",
+                      color: "#5a2bc7",
+                      fontWeight: 600,
+                      padding: "14px 26px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type={primaryButtonType}
+                    onClick={primaryButtonOnClick}
+                    disabled={isSaving || isPrimaryButtonDisabled}
+                    style={{
+                      borderRadius: "999px",
+                      border: "none",
+                      background: "linear-gradient(90deg, #7c3aed, #ec4899)",
+                      color: "#ffffff",
+                      fontWeight: 700,
+                      padding: "14px 32px",
+                      boxShadow: "0 18px 35px rgba(124, 58, 237, 0.28)",
+                      cursor:
+                        isSaving || isPrimaryButtonDisabled
+                          ? "not-allowed"
+                          : "pointer",
+                      opacity: isSaving || isPrimaryButtonDisabled ? 0.7 : 1,
+                    }}
+                  >
+                    {primaryButtonLabel}
+                  </button>
+                  {didFailSave ? (
+                    <span
+                      style={{
+                        color: "#d6456d",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Could not save changes. Please try again.
+                    </span>
+                  ) : null}
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "16px",
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                  }}
+                >
                   <button
                     type="button"
                     onClick={handleGoToPreviousStep}
@@ -1265,42 +1830,52 @@ export default function QuickStart() {
                       backgroundColor: "#f8f4ff",
                       color: "#5a2bc7",
                       fontWeight: 600,
-                      padding: "14px 26px",
+                      padding: "12px 24px",
                       cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
                     }}
                   >
+                    <span aria-hidden="true" style={{ fontSize: "18px" }}>
+                      ←
+                    </span>
                     Back
                   </button>
-                ) : null}
-                <button
-                  type={primaryButtonType}
-                  onClick={primaryButtonOnClick}
-                  style={{
-                    borderRadius: "999px",
-                    border: "none",
-                    background: "linear-gradient(90deg, #7c3aed, #ec4899)",
-                    color: "#ffffff",
-                    fontWeight: 700,
-                    padding: "14px 32px",
-                    boxShadow: "0 18px 35px rgba(124, 58, 237, 0.28)",
-                    cursor: isSaving ? "progress" : "pointer",
-                    opacity: isSaving ? 0.85 : 1,
-                  }}
-                >
-                  {primaryButtonLabel}
-                </button>
-                {didFailSave ? (
-                  <span
+                  <button
+                    type="button"
+                    onClick={handleGoToNextStep}
+                    disabled={
+                      activeFormStep === 2 &&
+                      (isSaving || coreServicesStatus === "saving")
+                    }
                     style={{
-                      color: "#d6456d",
-                      fontSize: "13px",
-                      fontWeight: 600,
+                      borderRadius: "999px",
+                      border: "none",
+                      background: "linear-gradient(90deg, #7c3aed, #ec4899)",
+                      color: "#ffffff",
+                      fontWeight: 700,
+                      padding: "14px 32px",
+                      boxShadow: "0 18px 35px rgba(124, 58, 237, 0.28)",
+                      cursor:
+                        activeFormStep === 2 &&
+                        (isSaving || coreServicesStatus === "saving")
+                          ? "not-allowed"
+                          : "pointer",
+                      opacity:
+                        activeFormStep === 2 &&
+                        (isSaving || coreServicesStatus === "saving")
+                          ? 0.7
+                          : 1,
                     }}
                   >
-                    Could not save changes. Please try again.
-                  </span>
-                ) : null}
-              </div>
+                    {activeFormStep === 2 &&
+                    (isSaving || coreServicesStatus === "saving")
+                      ? "Saving..."
+                      : "Next"}
+                  </button>
+                </div>
+              )}
             </div>
           </form>
         </section>

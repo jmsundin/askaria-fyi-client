@@ -54,17 +54,16 @@ function isAbsoluteUrl(value: string): boolean {
   return /^https?:\/\//i.test(value);
 }
 
-function ensureLeadingSlash(value: string): string {
-  return value.startsWith("/") ? value : `/${value}`;
-}
-
 function buildApiUrl(pathAndQuery: string): string {
   assertNonEmptyEnvironmentVariable(apiBaseUrlFromEnv, "VITE_LARAVEL_URL");
   const normalizedApiBaseUrl = normalizeBaseUrl(apiBaseUrlFromEnv);
   if (isAbsoluteUrl(pathAndQuery)) {
     return pathAndQuery;
   }
-  return `${normalizedApiBaseUrl}${ensureLeadingSlash(pathAndQuery)}`;
+  const normalizedPath = pathAndQuery.startsWith("/")
+    ? pathAndQuery
+    : `/${pathAndQuery}`;
+  return `${normalizedApiBaseUrl}${normalizedPath}`;
 }
 
 type AuthFetchOptions = RequestInit & {
