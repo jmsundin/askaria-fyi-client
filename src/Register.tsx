@@ -17,6 +17,7 @@ const registerFormStyles = {
     gap: "24px",
   },
   fieldGrid: {
+    border: "none",
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
     gap: "20px",
@@ -156,8 +157,6 @@ export default function Register() {
 
   return (
     <AuthLayout
-      heading="Create your account"
-      subheading="Set up Askaria in minutes. Customize your agent, connect integrations, and start delighting every caller."
       helperText="Already have an account?"
       helperLink={{ label: "Log in", to: "/login" }}
     >

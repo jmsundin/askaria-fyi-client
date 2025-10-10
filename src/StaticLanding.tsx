@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+
 export default function StaticLanding() {
   return (
     <main
@@ -27,32 +28,24 @@ export default function StaticLanding() {
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: "12px",
-            fontWeight: 700,
-            color: "#3c0f73",
+            gap: "16px",
             textDecoration: "none",
           }}
         >
           <span
-            aria-hidden="true"
             style={{
-              width: "42px",
-              height: "42px",
-              borderRadius: "14px",
-              background:
-                "linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(236, 72, 153, 0.35))",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#ffffff",
-              fontSize: "18px",
+              fontSize: "36px",
+              fontWeight: 700,
+              color: "#3c0f73",
             }}
           >
-            AF
+            AskAria
           </span>
-          <span style={{ fontSize: "20px" }}>Askaria Reception</span>
         </Link>
         <nav style={{ display: "flex", gap: "18px", fontWeight: 600 }}>
+          <Link to="/resources" style={{ color: "#5a189a" }}>
+            Resources
+          </Link>
           <Link to="/login" style={{ color: "#5a189a" }}>
             Login
           </Link>
@@ -106,7 +99,7 @@ export default function StaticLanding() {
               lineHeight: 1.6,
             }}
           >
-            Askaria greets callers instantly, collects the details you need, and
+            AskAria greets callers instantly, collects the details you need, and
             syncs notes back to your systems. Smarter than voicemail, more
             affordable than an outsourced receptionist.
           </p>
@@ -156,7 +149,7 @@ export default function StaticLanding() {
             style={{ display: "flex", flexDirection: "column", gap: "12px" }}
           >
             <h2 style={{ margin: 0, fontSize: "20px", color: "#220a3d" }}>
-              Why teams choose Askaria
+              Why teams choose AskAria
             </h2>
             <div style={{ display: "grid", gap: "12px" }}>
               {[
@@ -211,10 +204,181 @@ export default function StaticLanding() {
             }}
           >
             <strong style={{ fontSize: "15px", color: "#3c0f73" }}>
-              "Askaria made us sound polished and responsive from day one."
+              "AskAria made us sound polished and responsive from day one."
             </strong>
             <span>Sunday's Off Pools · Minneapolis, MN</span>
           </div>
+        </div>
+      </section>
+
+      <section
+        style={{
+          padding: "72px 56px 80px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "48px",
+          background:
+            "linear-gradient(180deg, rgba(246, 236, 255, 0.6) 0%, rgba(255, 255, 255, 0.95) 100%)",
+          color: "#2d0f4a",
+        }}
+      >
+        <div
+          style={{
+            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            gap: "16px",
+            maxWidth: "780px",
+          }}
+        >
+          <span
+            style={{
+              fontSize: "14px",
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "#7a3bd3",
+            }}
+          >
+            The Problem Today
+          </span>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "42px",
+              lineHeight: 1.1,
+              color: "#20073b",
+            }}
+          >
+            Currently, you have three bad options for tackling incoming calls:
+          </h2>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            gap: "32px",
+            width: "100%",
+            maxWidth: "1080px",
+          }}
+        >
+          {[
+            {
+              title: "Answer every call yourself",
+              bullets: [
+                "Constant interruptions during the day",
+                "Wasted time on spam calls",
+                "Always chasing people down",
+              ],
+            },
+            {
+              title: "Send calls you can't answer to voicemail",
+              bullets: [
+                "Most people don’t leave a message",
+                "Hard to find time to call back",
+                "Impossible to reach them again",
+              ],
+            },
+            {
+              title: "Pay too much for an outsourced service",
+              bullets: [
+                "Every call costs $2/minute",
+                "Long hold times for callers",
+                "Inconsistent service from untrained receptionists",
+              ],
+            },
+          ].map((option) => (
+            <article
+              key={option.title}
+              style={{
+                borderRadius: "24px",
+                backgroundColor: "rgba(255, 255, 255, 0.9)",
+                padding: "32px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "18px",
+                boxShadow: "0 28px 60px rgba(60, 15, 115, 0.08)",
+                border: "1px solid rgba(124, 58, 237, 0.12)",
+                alignItems: "center",
+                textAlign: "center",
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  width: "68px",
+                  height: "68px",
+                  borderRadius: "50%",
+                  background:
+                    "linear-gradient(135deg, rgba(236, 72, 153, 0.18), rgba(124, 58, 237, 0.24))",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "32px",
+                  color: "#7a3bd3",
+                  fontWeight: 700,
+                }}
+              >
+                ×
+              </span>
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: "20px",
+                  color: "#1f0c34",
+                  fontWeight: 700,
+                }}
+              >
+                {option.title}
+              </h3>
+              <ul
+                style={{
+                  margin: 0,
+                  padding: 0,
+                  listStyle: "none",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                  color: "#4a356c",
+                  fontSize: "15px",
+                  textAlign: "left",
+                  width: "100%",
+                }}
+              >
+                {option.bullets.map((bullet) => (
+                  <li
+                    key={bullet}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                    }}
+                  >
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        width: "18px",
+                        height: "18px",
+                        borderRadius: "50%",
+                        backgroundColor: "rgba(236, 72, 153, 0.16)",
+                        color: "#e11d48",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                      }}
+                    >
+                      ×
+                    </span>
+                    <span>{bullet}</span>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
         </div>
       </section>
 
@@ -231,7 +395,7 @@ export default function StaticLanding() {
           color: "#6b5c90",
         }}
       >
-        <span>© {new Date().getFullYear()} Askaria. All rights reserved.</span>
+        <span>© {new Date().getFullYear()} AskAria. All rights reserved.</span>
         <div style={{ display: "flex", gap: "16px" }}>
           <Link to="/login" style={{ color: "#5a189a" }}>
             Log in

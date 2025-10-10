@@ -7,16 +7,12 @@ type HelperLink = {
 };
 
 type AuthLayoutProps = {
-  heading: string;
-  subheading: string;
   helperText: string;
   helperLink: HelperLink;
   children: ReactNode;
 };
 
 export default function AuthLayout({
-  heading,
-  subheading,
   helperText,
   helperLink,
   children,
@@ -26,14 +22,16 @@ export default function AuthLayout({
       style={{
         minHeight: "100vh",
         display: "flex",
-        alignItems: "stretch",
+        alignItems: "center",
         justifyContent: "center",
+        position: "relative",
+        overflow: "hidden",
         background:
-          "linear-gradient(135deg, #f3f4ff 0%, #ffffff 50%, #f8f5ff 100%)",
+          "linear-gradient(135deg, #f3f4ff 0%, #ffffff 45%, #fdf8ff 100%)",
         color: "#2d1f47",
         fontFamily:
           "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        padding: "48px 24px",
+        padding: "64px 24px",
       }}
     >
       <div
@@ -41,8 +39,11 @@ export default function AuthLayout({
           width: "100%",
           maxWidth: "1040px",
           display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr)",
+          gridTemplateColumns: "minmax(0, 560px)",
+          justifyContent: "center",
           gap: "48px",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         <section
@@ -55,65 +56,27 @@ export default function AuthLayout({
             display: "flex",
             flexDirection: "column",
             gap: "32px",
+            position: "relative",
+            zIndex: 2,
           }}
         >
           <header
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: "12px",
+              gap: "16px",
+              alignItems: "flex-start",
             }}
           >
-            <div
+            <span
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "10px",
-                color: "#5a189a",
+                fontSize: "26px",
                 fontWeight: 700,
+                color: "#3c0f73",
               }}
             >
-              <span
-                aria-hidden="true"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "12px",
-                  background:
-                    "linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(236, 72, 153, 0.25))",
-                  color: "#3c0f73",
-                  fontSize: "16px",
-                }}
-              >
-                AF
-              </span>
-              <span style={{ fontSize: "16px", letterSpacing: "0.08em" }}>
-                Askaria Portal
-              </span>
-            </div>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: "40px",
-                lineHeight: 1.1,
-                color: "#301254",
-              }}
-            >
-              {heading}
-            </h1>
-            <p
-              style={{
-                margin: 0,
-                fontSize: "17px",
-                color: "#7c6f92",
-                maxWidth: "520px",
-              }}
-            >
-              {subheading}
-            </p>
+              AskAria
+            </span>
           </header>
 
           <div>{children}</div>
@@ -139,7 +102,7 @@ export default function AuthLayout({
               </Link>
             </span>
             <span style={{ fontSize: "13px" }}>
-              © {new Date().getFullYear()} Askaria
+              © {new Date().getFullYear()} AskAria
             </span>
           </footer>
         </section>

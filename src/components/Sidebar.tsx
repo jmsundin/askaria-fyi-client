@@ -20,18 +20,12 @@ type SidebarProps = {
 };
 
 const sidebarNavigationItems: SidebarNavigationItem[] = [
-  {
-    key: "quick-start",
-    label: "Quick Start Guide",
-    abbreviation: "QS",
-    path: "/app/quick-start",
-  },
   { key: "calls", label: "Calls", abbreviation: "CA", path: "/app/calls" },
   {
     key: "settings",
     label: "Agent Settings",
     abbreviation: "AS",
-    path: "/app",
+    path: "/app/settings",
   },
   {
     key: "integrations",
@@ -44,6 +38,12 @@ const sidebarNavigationItems: SidebarNavigationItem[] = [
     label: "Account",
     abbreviation: "AC",
     path: "/app/account",
+  },
+  {
+    key: "quick-start",
+    label: "Quick Start Guide",
+    abbreviation: "QS",
+    path: "/app/quick-start",
   },
 ];
 
@@ -65,33 +65,17 @@ export default function Sidebar({ activeItem, businessLabel }: SidebarProps) {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "12px",
+            justifyContent: "space-between",
             marginBottom: "8px",
+            gap: "16px",
           }}
         >
-          <span
-            aria-hidden="true"
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "50%",
-              background: "linear-gradient(180deg, #8b5cf6 0%, #ec4899 100%)",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#ffffff",
-              fontWeight: 700,
-              fontSize: "18px",
-            }}
-          >
-            A
+          <Link to="/" style={{ display: "inline-flex" }}>
+            <span>AskAria</span>
+          </Link>
+          <span style={{ fontSize: "14px", color: "#7c6f92" }}>
+            {businessLabel}
           </span>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ fontSize: "22px", fontWeight: 700 }}>Aria</span>
-            <span style={{ fontSize: "14px", color: "#7c6f92" }}>
-              {businessLabel}
-            </span>
-          </div>
         </div>
         <nav aria-label="Sidebar navigation">
           <ul
@@ -109,7 +93,6 @@ export default function Sidebar({ activeItem, businessLabel }: SidebarProps) {
               const commonStyles = {
                 display: "flex",
                 alignItems: "center",
-                gap: "10px",
                 padding: "12px 16px",
                 borderRadius: "12px",
                 textDecoration: "none",
@@ -122,28 +105,6 @@ export default function Sidebar({ activeItem, businessLabel }: SidebarProps) {
                 transition: "background-color 0.2s ease, color 0.2s ease",
               } as const;
 
-              const abbreviationBadge = (
-                <span
-                  aria-hidden="true"
-                  style={{
-                    width: "32px",
-                    height: "32px",
-                    borderRadius: "50%",
-                    backgroundColor: isActive
-                      ? "rgba(255, 255, 255, 0.15)"
-                      : "#f3e8ff",
-                    color: isActive ? "#ffffff" : "#5a189a",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                    fontSize: "12px",
-                  }}
-                >
-                  {navigationItem.abbreviation}
-                </span>
-              );
-
               if (navigationItem.path) {
                 return (
                   <li key={navigationItem.key}>
@@ -152,7 +113,6 @@ export default function Sidebar({ activeItem, businessLabel }: SidebarProps) {
                       aria-current={isActive ? "page" : undefined}
                       style={commonStyles}
                     >
-                      {abbreviationBadge}
                       {navigationItem.label}
                     </Link>
                   </li>
@@ -168,7 +128,6 @@ export default function Sidebar({ activeItem, businessLabel }: SidebarProps) {
                       opacity: isActive ? 1 : 0.6,
                     }}
                   >
-                    {abbreviationBadge}
                     {navigationItem.label}
                   </span>
                 </li>

@@ -15,6 +15,7 @@ const formStyles = {
     gap: "24px",
   },
   fieldset: {
+    border: "none",
     display: "flex",
     flexDirection: "column" as const,
     gap: "18px",
@@ -31,13 +32,13 @@ const formStyles = {
   },
   input: {
     borderRadius: "14px",
-    border: "1px solid #d8c7ff",
+    border: "none",
     backgroundColor: "#ffffff",
     padding: "14px 18px",
     fontSize: "15px",
     fontWeight: 500,
     color: "#2d1f47",
-    boxShadow: "0 8px 24px rgba(74, 35, 135, 0.08)",
+    boxShadow: "0 14px 32px rgba(74, 35, 135, 0.1)",
   },
   inputError: {
     border: "1px solid #f97316",
@@ -155,8 +156,6 @@ export default function Login() {
 
   return (
     <AuthLayout
-      heading="Welcome back"
-      subheading="Sign in to configure your agent, review conversations, and keep Askaria working for your business."
       helperText="Need an account?"
       helperLink={{ label: "Register", to: "/register" }}
     >
@@ -220,7 +219,7 @@ export default function Login() {
         </fieldset>
 
         <div style={formStyles.formFooter}>
-          <span>Forgot your password? Reach out to your administrator.</span>
+          <span>Forgot your password?</span>
           <button
             type="submit"
             disabled={submitting}

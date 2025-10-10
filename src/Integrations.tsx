@@ -26,7 +26,7 @@ const availableIntegrations: IntegrationCard[] = [
     id: "twilio",
     name: "Twilio Voice",
     description:
-      "Bring your existing numbers and route calls through Askaria instantly.",
+      "Bring your existing numbers and route calls through AskAria instantly.",
     category: "telephony",
     actionLabel: "Connect",
     accentLabel: "TV",
@@ -35,7 +35,7 @@ const availableIntegrations: IntegrationCard[] = [
     id: "ringcentral",
     name: "RingCentral",
     description:
-      "Forward RingCentral calls into Askaria without changing workflows.",
+      "Forward RingCentral calls into AskAria without changing workflows.",
     category: "telephony",
     actionLabel: "Connect",
     accentLabel: "RC",
@@ -84,7 +84,7 @@ const connectedIntegrations: ConnectedIntegration[] = [
     name: "Aircall",
     statusLabel: "Active",
     lastSyncedLabel: "Synced 5 minutes ago",
-    usageSummary: "Forwarding 92% of inbound calls to Askaria",
+    usageSummary: "Forwarding 92% of inbound calls to AskAria",
   },
   {
     id: "salesforce",
@@ -123,7 +123,7 @@ export default function Integrations() {
     window.location.href = "/login";
   }
 
-  const sidebarBusinessLabel = authenticatedUser?.name ?? "Askaria Customer";
+  const sidebarBusinessLabel = authenticatedUser?.name ?? "AskAria Customer";
 
   const integrationsByCategory = useMemo(() => {
     return availableIntegrations.reduce<
@@ -197,7 +197,7 @@ export default function Integrations() {
                 maxWidth: "540px",
               }}
             >
-              Link Askaria with phone systems, CRMs, and automations so callers
+              Link AskAria with phone systems, CRMs, and automations so callers
               instantly sync with the systems your team already uses.
             </p>
           </div>

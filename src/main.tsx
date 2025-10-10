@@ -7,11 +7,14 @@ import Register from "./Register.tsx";
 import Login from "./Login.tsx";
 import Home from "./Home.tsx";
 import QuickStart from "./QuickStart.tsx";
+import QuickStartTest from "./QuickStartTest";
+import QuickStartLaunch from "./QuickStartLaunch";
 import ProtectedRoute from "./ProtectedRoute";
 import Calls from "./Calls.tsx";
 import Account from "./Account";
 import Integrations from "./Integrations";
 import { getToken } from "./auth";
+import Resources from "./Resources";
 
 export function RedirectIfAuthenticated() {
   const token = getToken();
@@ -53,12 +56,19 @@ createRoot(rootElement).render(
             </>
           }
         />
+        <Route path="/resources" element={<Resources />} />
 
         {/* Protected app area */}
         <Route element={<ProtectedRoute />}>
           <Route path="/app/quick-start" element={<QuickStart />} />
-          <Route path="/app" element={<Home />} />
+          <Route path="/app/quick-start/test" element={<QuickStartTest />} />
+          <Route
+            path="/app/quick-start/launch"
+            element={<QuickStartLaunch />}
+          />
+          <Route path="/app" element={<Calls />} />
           <Route path="/app/calls" element={<Calls />} />
+          <Route path="/app/settings" element={<Home />} />
           <Route path="/app/account" element={<Account />} />
           <Route path="/app/integrations" element={<Integrations />} />
         </Route>

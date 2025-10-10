@@ -72,7 +72,7 @@ export default function Account() {
     window.location.href = "/login";
   }
 
-  const sidebarBusinessLabel = authenticatedUser?.name ?? "Askaria Customer";
+  const sidebarBusinessLabel = authenticatedUser?.name ?? "AskAria Customer";
 
   const activeTab = useMemo(
     () => accountTabs.find((tab) => tab.id === activeTabId),
@@ -103,6 +103,7 @@ export default function Account() {
           display: "flex",
           flexDirection: "column",
           gap: "36px",
+          alignItems: "center",
         }}
       >
         <header
@@ -110,6 +111,8 @@ export default function Account() {
             display: "flex",
             flexDirection: "column",
             gap: "8px",
+            width: "100%",
+            margin: "0 auto",
           }}
         >
           <div
@@ -146,7 +149,6 @@ export default function Account() {
                   margin: 0,
                   fontSize: "16px",
                   color: "#7b6f91",
-                  maxWidth: "520px",
                 }}
               >
                 Manage your user account preferences and settings in one place.
@@ -167,7 +169,10 @@ export default function Account() {
           </div>
         </header>
 
-        <nav aria-label="Account tabs">
+        <nav
+          aria-label="Account tabs"
+          style={{ width: "100%", margin: "0 auto" }}
+        >
           <ul
             style={{
               listStyle: "none",
@@ -228,6 +233,8 @@ export default function Account() {
             display: "flex",
             flexDirection: "column",
             gap: "24px",
+            width: "100%",
+            margin: "0 auto",
           }}
         >
           {renderActiveTabContent({
@@ -285,7 +292,7 @@ function AccountSettingsTab({
     {
       title: "Verification Codes",
       description:
-        "Receive authentication codes via your Askaria phone number.",
+        "Receive authentication codes via your AskAria phone number.",
       accentIconLabel: "VC",
       primaryActionLabel: "Configure",
       secondaryContent: "Required for certain carriers.",
