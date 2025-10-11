@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import Sidebar from "./components/Sidebar";
 import { authFetch, clearToken, type AuthUser } from "./auth";
-import { CallFilterState, useCallsQuery } from "./hooks/useCallsQuery";
+import type { CallFilterState } from "./hooks/useCallsQuery";
+import { useCallsQuery } from "./hooks/useCallsQuery";
 
 export default function Calls() {
   const [user, setUser] = useState<AuthUser | null>(null);
