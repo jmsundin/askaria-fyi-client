@@ -247,7 +247,6 @@ export default function QuickStart() {
   const [hasLoadedProfile, setHasLoadedProfile] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [didFailSave, setDidFailSave] = useState(false);
-  const [didSave, setDidSave] = useState(false);
   const [isBusinessNameTouched, setIsBusinessNameTouched] = useState(false);
   const [isBusinessPhoneNumberTouched, setIsBusinessPhoneNumberTouched] =
     useState(false);
@@ -745,7 +744,6 @@ export default function QuickStart() {
   function handleBusinessNameChange(event: ChangeEvent<HTMLInputElement>) {
     setBusinessName(event.target.value);
     if (activeFormStep === 1) {
-      setDidSave(false);
       setDidFailSave(false);
       setHasPendingProfileChanges(true);
     }
@@ -756,7 +754,6 @@ export default function QuickStart() {
   ) {
     setBusinessPhoneNumber(event.target.value);
     if (activeFormStep === 1) {
-      setDidSave(false);
       setDidFailSave(false);
       setHasPendingProfileChanges(true);
     }
@@ -767,7 +764,6 @@ export default function QuickStart() {
   ) {
     setBusinessOverview(event.target.value);
     if (activeFormStep === 1) {
-      setDidSave(false);
       setDidFailSave(false);
       setHasPendingProfileChanges(true);
     }
@@ -914,8 +910,7 @@ export default function QuickStart() {
       return;
     }
     setActiveFormStep((previousStep) => Math.max(1, previousStep - 1));
-    setDidSave(true);
-    setHasAttemptedSubmit(false);
+    setDidFailSave(true);
     setIsBusinessNameTouched(false);
     setIsBusinessPhoneNumberTouched(false);
     setIsBusinessOverviewTouched(false);

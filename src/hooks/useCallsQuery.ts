@@ -1,0 +1,223 @@
+import { useCallback, useMemo, useReducer } from "react";
+import { authFetch } from "../auth";
+
+export type CallFilterState = {
+  status?: string;
+  starred?: boolean;
+  search?: string;
+  after?: string;
+  before?: string;
+};
+
+export type CallListItem = {
+  id: number;
+  callerName: string | null;
+  fromNumber: string | null;
+  toNumber: string | null;
+  startedAt: string | null;
+  isStarred: boolean;
+  status: string;
+};
+
+type ServerCall = {
+  id: number;
+  callerName: string | null;
+  fromNumber: string | null;
+  toNumber: string | null;
+  startedAt: string | null;
+  isStarred: boolean;
+  status: string;
+};
+
+type ApiResponse = {
+  data: ServerCall[];
+  meta: {
+    perPage: number;
+    hasMore: boolean;
+    nextCursor: string | null;
+    prevCursor: string | null;
+  };
+};
+
+type State = {
+  items: CallListItem[];
+  loading: boolean;
+  error: string | null;
+  meta: ApiResponse["meta"] | null;
+  cursorByFilter: Record<string, string | null>;
+};
+
+type Action =
+  | { type: "START" }
+  | {
+      type: "SUCCESS";
+      payload: {
+        items: CallListItem[];
+        meta: ApiResponse["meta"];
+        filterKey: string;
+        nextCursor: string | null;
+        append: boolean;
+      };
+    }
+  | { type: "FAIL"; payload: { message: string } };
+
+const initialState: State = {
+  items: [],
+  loading: false,
+  error: null,
+  meta: null,
+  cursorByFilter: {},
+};
+
+function dedupeById(items: CallListItem[]): CallListItem[] {
+  const seen = new Set<number>();
+  const result: CallListItem[] = [];
+  for (const item of items) {
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    result.push(item);
+  }
+  return result;
+}
+
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case "START":
+      return { ...state, loading: true, error: null };
+    case "SUCCESS": {
+      const { items, meta, filterKey, nextCursor, append } = action.payload;
+      const nextItems = append ? dedupeById([...state.items, ...items]) : items;
+      return {
+        items: nextItems,
+        loading: false,
+        error: null,
+        meta,
+        cursorByFilter: {
+          ...state.cursorByFilter,
+          [filterKey]: nextCursor,
+        },
+      };
+    }
+    case "FAIL":
+      return { ...state, loading: false, error: action.payload.message };
+    default:
+      return state;
+  }
+}
+
+type FetchParams = {
+  filters: CallFilterState;
+  limit?: number;
+  cursor?: string | null;
+};
+
+function buildQueryString(params: FetchParams): string {
+  const searchParams = new URLSearchParams();
+  if (params.limit) searchParams.set("limit", String(params.limit));
+  if (params.cursor) searchParams.set("cursor", params.cursor);
+  if (params.filters.status) searchParams.set("status", params.filters.status);
+  if (params.filters.after) searchParams.set("after", params.filters.after);
+  if (params.filters.before) searchParams.set("before", params.filters.before);
+  if (params.filters.search) searchParams.set("search", params.filters.search);
+  if (typeof params.filters.starred === "boolean") {
+    searchParams.set("starred", params.filters.starred ? "1" : "0");
+  }
+  const query = searchParams.toString();
+  return query === "" ? "" : `?${query}`;
+}
+
+function buildFilterKey(filters: CallFilterState): string {
+  return JSON.stringify(filters ?? {});
+}
+
+function mapCall(serverCall: ServerCall): CallListItem {
+  return {
+    id: serverCall.id,
+    callerName: serverCall.callerName,
+    fromNumber: serverCall.fromNumber,
+    toNumber: serverCall.toNumber,
+    startedAt: serverCall.startedAt,
+    isStarred: serverCall.isStarred,
+    status: serverCall.status,
+  };
+}
+
+type UseCallsQueryResult = {
+  data: CallListItem[];
+  loading: boolean;
+  error: string | null;
+  meta: ApiResponse["meta"] | null;
+  load: (params: {
+    filters: CallFilterState;
+    cursor?: string | null;
+    limit?: number;
+  }) => Promise<void>;
+  getStoredCursor: (filters: CallFilterState) => string | null;
+};
+
+export function useCallsQuery(): UseCallsQueryResult {
+  const [state, dispatch] = useReducer(reducer, initialState);
+
+  const load = useCallback(
+    async ({
+      filters,
+      cursor = null,
+      limit = 25,
+    }: {
+      filters: CallFilterState;
+      cursor?: string | null;
+      limit?: number;
+    }) => {
+      dispatch({ type: "START" });
+      try {
+        const query = buildQueryString({ filters, cursor, limit });
+        const response = await authFetch(`/calls${query}`);
+
+        if (!response.ok) {
+          const message = `Failed to load calls (${response.status})`;
+          dispatch({ type: "FAIL", payload: { message } });
+          return;
+        }
+
+        const json = (await response.json()) as ApiResponse;
+        const mappedItems = json.data.map(mapCall);
+        dispatch({
+          type: "SUCCESS",
+          payload: {
+            items: mappedItems,
+            meta: json.meta,
+            filterKey: buildFilterKey(filters),
+            nextCursor: json.meta.nextCursor,
+            append: cursor !== null,
+          },
+        });
+      } catch (error) {
+        dispatch({
+          type: "FAIL",
+          payload: {
+            message: error instanceof Error ? error.message : "Unknown error",
+          },
+        });
+      }
+    },
+    []
+  );
+
+  const getStoredCursor = useCallback(
+    (filters: CallFilterState) =>
+      state.cursorByFilter[buildFilterKey(filters)] ?? null,
+    [state.cursorByFilter]
+  );
+
+  return useMemo(
+    () => ({
+      data: state.items,
+      loading: state.loading,
+      error: state.error,
+      meta: state.meta,
+      load,
+      getStoredCursor,
+    }),
+    [state.items, state.loading, state.error, state.meta, load, getStoredCursor]
+  );
+}
