@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type CSSProperties,
   type KeyboardEvent,
   type MouseEvent,
 } from "react";
@@ -44,6 +45,27 @@ const DEFAULT_GREETING_MESSAGE =
 
 const RECORDING_DISCLAIMER_SENTENCE =
   "Our call may be recorded today for quality control purposes.";
+
+const quickStartPageContainerStyles: CSSProperties = {
+  width: "100%",
+  display: "flex",
+  minHeight: "100vh",
+  background: "linear-gradient(135deg, #f6f7fb 0%, #ffffff 60%, #f6f1ff 100%)",
+  color: "#2d1f47",
+  fontFamily:
+    '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+};
+
+const quickStartMainLayoutStyles: CSSProperties = {
+  flex: 1,
+  padding: "36px 40px 64px",
+  display: "flex",
+  flexDirection: "column",
+  gap: "24px",
+  height: "100vh",
+  overflowY: "auto",
+  boxSizing: "border-box",
+};
 
 function removeRecordingDisclaimerSentence(text: string): string {
   const escapedSentence = RECORDING_DISCLAIMER_SENTENCE.replace(
@@ -400,6 +422,7 @@ export default function QuickStart() {
       businessPhoneNumber,
       businessOverview,
       faqEntries,
+      greetingDraft,
     ]
   );
 
@@ -442,6 +465,7 @@ export default function QuickStart() {
       businessPhoneNumber,
       businessOverview,
       coreServices,
+      greetingDraft,
     ]
   );
 
@@ -1032,32 +1056,15 @@ export default function QuickStart() {
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        backgroundColor: "#f8f6ff",
-        color: "#301447",
-        fontFamily:
-          "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      }}
-    >
+    <div style={quickStartPageContainerStyles}>
       <Sidebar activeItem="quick-start" businessLabel={sidebarBusinessLabel} />
-      <main
-        style={{
-          flex: 1,
-          padding: "48px 64px 80px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "32px",
-          alignItems: "center",
-        }}
-      >
+      <main style={quickStartMainLayoutStyles}>
         <div
           style={{
             width: "100%",
             display: "flex",
             justifyContent: "flex-end",
+            color: "#301447",
           }}
         >
           <a

@@ -1,6 +1,5 @@
 import "./App.css";
-import StaticLanding from "./StaticLanding";
 
 export default function App() {
-  return <StaticLanding />;
+  return null;
 }

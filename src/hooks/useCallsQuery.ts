@@ -7,26 +7,63 @@ export type CallFilterState = {
   search?: string;
   after?: string;
   before?: string;
+  toNumber?: string;
 };
+
+export type TranscriptMessage = {
+  id: string;
+  speaker: string;
+  content: string;
+  capturedAt: string | null;
+};
+
+export type CallSummary = {
+  callerName?: string | null;
+  reason?: string | null;
+  notes?: string | null;
+  [key: string]: unknown;
+} | null;
 
 export type CallListItem = {
   id: number;
+  callSid: string | null;
+  sessionId: string | null;
   callerName: string | null;
   fromNumber: string | null;
   toNumber: string | null;
+  forwardedFrom: string | null;
   startedAt: string | null;
   isStarred: boolean;
   status: string;
+  recordingUrl: string | null;
+  summary: CallSummary;
+  transcriptMessages: TranscriptMessage[];
+  transcriptText: string | null;
+  endedAt: string | null;
+  durationSeconds: number | null;
+  createdAt: string | null;
+  updatedAt: string | null;
 };
 
 type ServerCall = {
   id: number;
+  callSid: string | null;
+  sessionId: string | null;
   callerName: string | null;
   fromNumber: string | null;
   toNumber: string | null;
+  forwardedFrom: string | null;
   startedAt: string | null;
   isStarred: boolean;
   status: string;
+  recordingUrl: string | null;
+  summary: CallSummary;
+  transcriptMessages: TranscriptMessage[];
+  transcriptText: string | null;
+  endedAt: string | null;
+  durationSeconds: number | null;
+  createdAt: string | null;
+  updatedAt: string | null;
 };
 
 type ApiResponse = {
@@ -119,6 +156,8 @@ function buildQueryString(params: FetchParams): string {
   if (params.filters.after) searchParams.set("after", params.filters.after);
   if (params.filters.before) searchParams.set("before", params.filters.before);
   if (params.filters.search) searchParams.set("search", params.filters.search);
+  if (params.filters.toNumber)
+    searchParams.set("to_number", params.filters.toNumber);
   if (typeof params.filters.starred === "boolean") {
     searchParams.set("starred", params.filters.starred ? "1" : "0");
   }
@@ -133,12 +172,23 @@ function buildFilterKey(filters: CallFilterState): string {
 function mapCall(serverCall: ServerCall): CallListItem {
   return {
     id: serverCall.id,
+    callSid: serverCall.callSid,
+    sessionId: serverCall.sessionId,
     callerName: serverCall.callerName,
     fromNumber: serverCall.fromNumber,
     toNumber: serverCall.toNumber,
+    forwardedFrom: serverCall.forwardedFrom,
     startedAt: serverCall.startedAt,
     isStarred: serverCall.isStarred,
     status: serverCall.status,
+    recordingUrl: serverCall.recordingUrl,
+    summary: serverCall.summary,
+    transcriptMessages: serverCall.transcriptMessages ?? [],
+    transcriptText: serverCall.transcriptText,
+    endedAt: serverCall.endedAt,
+    durationSeconds: serverCall.durationSeconds,
+    createdAt: serverCall.createdAt,
+    updatedAt: serverCall.updatedAt,
   };
 }
 

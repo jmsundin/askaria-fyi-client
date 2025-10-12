@@ -58,6 +58,11 @@ export default function Sidebar({ activeItem, businessLabel }: SidebarProps) {
         display: "flex",
         flexDirection: "column",
         gap: "28px",
+        position: "sticky",
+        top: 0,
+        alignSelf: "flex-start",
+        height: "100vh",
+        overflowY: "auto",
       }}
     >
       <div>

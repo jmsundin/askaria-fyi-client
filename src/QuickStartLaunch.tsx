@@ -89,6 +89,9 @@ export default function QuickStartLaunch() {
           display: "flex",
           flexDirection: "column",
           gap: "32px",
+          height: "100vh",
+          overflowY: "auto",
+          boxSizing: "border-box",
         }}
       >
         <nav

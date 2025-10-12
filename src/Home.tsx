@@ -98,6 +98,9 @@ export default function Home() {
           display: "flex",
           flexDirection: "column",
           gap: "32px",
+          height: "100vh",
+          overflowY: "auto",
+          boxSizing: "border-box",
         }}
       >
         <section

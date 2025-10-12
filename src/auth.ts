@@ -2,6 +2,12 @@ export type AuthUser = {
   id: number;
   name: string;
   email: string;
+  agent_profile?: {
+    business_phone_number: string | null;
+    business_overview?: string | null;
+    core_services?: unknown[];
+    faq?: unknown[];
+  } | null;
 };
 
 export type AuthResponse = {

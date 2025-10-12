@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type MouseEvent,
+} from "react";
 import Sidebar from "./components/Sidebar";
 import { authFetch, clearToken, type AuthUser } from "./auth";
 
@@ -17,6 +23,27 @@ type TabbedCard = {
   primaryActionLabel: string;
   onPrimaryAction?: () => void;
   secondaryContent?: string;
+};
+
+const accountPageContainerStyles: CSSProperties = {
+  width: "100%",
+  display: "flex",
+  minHeight: "100vh",
+  background: "linear-gradient(135deg, #f6f7fb 0%, #ffffff 60%, #f6f1ff 100%)",
+  color: "#2d1f47",
+  fontFamily:
+    '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+};
+
+const accountMainLayoutStyles: CSSProperties = {
+  flex: 1,
+  padding: "36px 40px 64px",
+  display: "flex",
+  flexDirection: "column",
+  gap: "24px",
+  height: "100vh",
+  overflowY: "auto",
+  boxSizing: "border-box",
 };
 
 const accountTabs: AccountTab[] = [
@@ -84,28 +111,9 @@ export default function Account() {
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        background:
-          "linear-gradient(135deg, #f5f7fb 0%, #ffffff 55%, #f5efff 100%)",
-        color: "#291a47",
-        fontFamily:
-          "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      }}
-    >
+    <div style={accountPageContainerStyles}>
       <Sidebar activeItem="account" businessLabel={sidebarBusinessLabel} />
-      <main
-        style={{
-          flex: 1,
-          padding: "48px 56px 80px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "36px",
-          alignItems: "center",
-        }}
-      >
+      <main style={accountMainLayoutStyles}>
         <header
           style={{
             display: "flex",
@@ -113,6 +121,7 @@ export default function Account() {
             gap: "8px",
             width: "100%",
             margin: "0 auto",
+            color: "#291a47",
           }}
         >
           <div

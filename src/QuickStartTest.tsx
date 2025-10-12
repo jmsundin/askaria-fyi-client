@@ -36,6 +36,9 @@ export default function QuickStartTest() {
           display: "flex",
           flexDirection: "column",
           gap: "32px",
+          height: "100vh",
+          overflowY: "auto",
+          boxSizing: "border-box",
         }}
       >
         <nav

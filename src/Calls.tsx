@@ -1,14 +1,226 @@
-import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type DragEvent,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
+import {
+  TbChevronDown,
+  TbGripVertical,
+  TbLayoutSidebarLeftCollapseFilled,
+  TbLayoutSidebarRightCollapseFilled,
+} from "react-icons/tb";
 import Sidebar from "./components/Sidebar";
 import { authFetch, clearToken, type AuthUser } from "./auth";
-import type { CallFilterState } from "./hooks/useCallsQuery";
+import type {
+  CallFilterState,
+  CallListItem,
+  TranscriptMessage,
+} from "./hooks/useCallsQuery";
 import { useCallsQuery } from "./hooks/useCallsQuery";
+import "./Calls.css";
+
+type SummaryEntry = {
+  label: string;
+  value: string | null;
+};
+
+type TimelineEntry = {
+  id: string;
+  speaker: "agent" | "caller" | "other";
+  speakerLabel: string;
+  timestampLabel: string;
+  content: string;
+};
+
+function formatAbsoluteTimestamp(timestamp: string | null): string {
+  if (!timestamp) return "Unknown time";
+  const date = new Date(timestamp);
+  return date.toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function formatRelativeTimestamp(timestamp: string | null): string {
+  if (!timestamp) return "";
+  const now = Date.now();
+  const target = new Date(timestamp).getTime();
+  const diffMs = target - now;
+  const minutes = Math.round(diffMs / (1000 * 60));
+  const hours = Math.round(diffMs / (1000 * 60 * 60));
+  const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+
+  if (Math.abs(minutes) < 60) {
+    return formatter.format(minutes, "minute");
+  }
+  if (Math.abs(hours) < 48) {
+    return formatter.format(hours, "hour");
+  }
+  return formatter.format(days, "day");
+}
+
+function formatDuration(durationSeconds: number | null): string {
+  if (!durationSeconds) return "—";
+  const minutes = Math.floor(durationSeconds / 60);
+  const seconds = durationSeconds % 60;
+  const minuteLabel = minutes > 0 ? `${minutes} min` : "";
+  const secondLabel = seconds > 0 ? `${seconds} sec` : "";
+  return (
+    `${minuteLabel}${
+      minuteLabel && secondLabel ? " " : ""
+    }${secondLabel}`.trim() || "—"
+  );
+}
+
+function buildTimeline(messages: TranscriptMessage[]): TimelineEntry[] {
+  return messages.map((message) => {
+    const timestampLabel = message.capturedAt
+      ? new Date(message.capturedAt).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "";
+
+    let speaker: "agent" | "caller" | "other" = "other";
+    if (message.speaker === "agent") speaker = "agent";
+    if (message.speaker === "caller") speaker = "caller";
+
+    const speakerLabel =
+      speaker === "agent"
+        ? "Aria"
+        : speaker === "caller"
+        ? "Caller"
+        : message.speaker;
+
+    return {
+      id: message.id,
+      speaker,
+      speakerLabel,
+      timestampLabel,
+      content: message.content,
+    };
+  });
+}
+
+function extractSummaryEntries(call: CallListItem): SummaryEntry[] {
+  const summary = call.summary ?? {};
+  const entries: SummaryEntry[] = [];
+
+  const callerName =
+    (typeof summary === "object" && summary && "callerName" in summary
+      ? (summary as Record<string, unknown>).callerName
+      : null) ?? call.callerName;
+  entries.push({
+    label: "Caller",
+    value: callerName ? String(callerName) : null,
+  });
+
+  entries.push({ label: "Phone", value: call.fromNumber });
+
+  if (typeof summary === "object" && summary) {
+    const summaryRecord = summary as Record<string, unknown>;
+
+    if (summaryRecord.reason) {
+      entries.push({ label: "Reason", value: String(summaryRecord.reason) });
+    }
+
+    if (summaryRecord.notes) {
+      entries.push({ label: "Notes", value: String(summaryRecord.notes) });
+    }
+
+    if (summaryRecord.customerAvailability) {
+      entries.push({
+        label: "Availability",
+        value: String(summaryRecord.customerAvailability),
+      });
+    }
+  }
+
+  if (
+    !entries.some((entry) => entry.label === "Notes") &&
+    call.transcriptText
+  ) {
+    const firstSentence = call.transcriptText.split(/(?<=[.!?])\s/)[0];
+    entries.push({ label: "Notes", value: firstSentence });
+  }
+
+  return entries;
+}
+
+function extractSummaryTags(summary: CallListItem["summary"]): string[] {
+  if (!summary || typeof summary !== "object") return [];
+  const summaryRecord = summary as Record<string, unknown>;
+  const candidates =
+    summaryRecord.tags ?? summaryRecord.labels ?? summaryRecord.keywords;
+  if (!Array.isArray(candidates)) return [];
+  return candidates
+    .map((tag) => (typeof tag === "string" ? tag : null))
+    .filter((tag): tag is string => Boolean(tag));
+}
+
+function getSummaryPreview(call: CallListItem): string | null {
+  const summary = call.summary ?? {};
+  if (typeof summary === "object" && summary) {
+    const summaryRecord = summary as Record<string, unknown>;
+    if (typeof summaryRecord.preview === "string") return summaryRecord.preview;
+    if (typeof summaryRecord.notes === "string") return summaryRecord.notes;
+    if (typeof summaryRecord.reason === "string") return summaryRecord.reason;
+  }
+
+  if (call.transcriptMessages.length > 0) {
+    return call.transcriptMessages[0].content;
+  }
+
+  return null;
+}
+
+function resolveCallerName(call: CallListItem): string {
+  const summary = call.summary;
+  if (summary && typeof summary === "object") {
+    const summaryRecord = summary as Record<string, unknown>;
+    const summaryCallerName = summaryRecord.callerName;
+    if (typeof summaryCallerName === "string") {
+      const trimmedSummaryCallerName = summaryCallerName.trim();
+      if (trimmedSummaryCallerName !== "") {
+        return trimmedSummaryCallerName;
+      }
+    }
+  }
+
+  if (typeof call.callerName === "string") {
+    const trimmedCallerName = call.callerName.trim();
+    if (trimmedCallerName !== "") {
+      return trimmedCallerName;
+    }
+  }
+
+  if (typeof call.fromNumber === "string") {
+    const trimmedFromNumber = call.fromNumber.trim();
+    if (trimmedFromNumber !== "") {
+      return trimmedFromNumber;
+    }
+  }
+
+  return "";
+}
 
 export default function Calls() {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [filters] = useState<CallFilterState>({ status: "completed" });
+  const [filters, setFilters] = useState<CallFilterState>({});
   const { data, meta, loading, load } = useCallsQuery();
   const [selectedCallId, setSelectedCallId] = useState<number | null>(null);
+  const [isStarUpdating, setIsStarUpdating] = useState(false);
+  const [isArchiveUpdating, setIsArchiveUpdating] = useState(false);
+  const [isInboxCollapsed, setIsInboxCollapsed] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -19,8 +231,17 @@ export default function Calls() {
         window.location.href = "/login";
         return;
       }
+
       const authenticatedUser: AuthUser = await response.json();
-      if (isMounted) setUser(authenticatedUser);
+      if (!isMounted) return;
+
+      setUser(authenticatedUser);
+      const businessPhoneNumber =
+        authenticatedUser.agent_profile?.business_phone_number;
+      setFilters((currentFilters) => ({
+        ...currentFilters,
+        toNumber: businessPhoneNumber ?? currentFilters.toNumber,
+      }));
     })();
     return () => {
       isMounted = false;
@@ -28,14 +249,58 @@ export default function Calls() {
   }, []);
 
   useEffect(() => {
+    if (!user) return;
     load({ filters });
-  }, [filters, load]);
+  }, [user, filters, load]);
 
   useEffect(() => {
     if (data.length > 0 && selectedCallId === null) {
       setSelectedCallId(data[0].id);
     }
   }, [data, selectedCallId]);
+
+  const selectedCall = useMemo(
+    () => data.find((call) => call.id === selectedCallId) ?? null,
+    [data, selectedCallId]
+  );
+
+  const starredCount = useMemo(
+    () => data.reduce((total, call) => (call.isStarred ? total + 1 : total), 0),
+    [data]
+  );
+
+  const sidebarBusinessLabel =
+    user?.agent_profile?.business_phone_number ?? user?.name ?? "Your Business";
+
+  async function handleToggleStar(call: CallListItem) {
+    if (isStarUpdating) return;
+    setIsStarUpdating(true);
+    try {
+      const response = await authFetch(`/calls/${call.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ is_starred: !call.isStarred }),
+      });
+      if (!response.ok) return;
+      await load({ filters });
+    } finally {
+      setIsStarUpdating(false);
+    }
+  }
+
+  async function handleArchiveStatus(call: CallListItem, status: string) {
+    if (isArchiveUpdating) return;
+    setIsArchiveUpdating(true);
+    try {
+      const response = await authFetch(`/calls/${call.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) return;
+      await load({ filters });
+    } finally {
+      setIsArchiveUpdating(false);
+    }
+  }
 
   function handleLogout(event: MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
@@ -48,299 +313,584 @@ export default function Calls() {
     load({ filters, cursor: meta.nextCursor });
   }
 
-  const selectedCall = useMemo(
-    () => data.find((call) => call.id === selectedCallId) ?? null,
-    [data, selectedCallId]
-  );
-  const sidebarBusinessLabel = user?.name ?? "855-RILAWNS";
-
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        background:
-          "linear-gradient(135deg, #f6f7fb 0%, #ffffff 60%, #f6f1ff 100%)",
-        color: "#2d1f47",
-        fontFamily:
-          "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      }}
-    >
+    <div className="calls-page">
       <Sidebar activeItem="calls" businessLabel={sidebarBusinessLabel} />
-      <main
-        style={{
-          flex: 1,
-          padding: "42px 48px 72px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "24px",
-        }}
-      >
-        <header
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <h1 style={{ margin: 0, fontSize: "30px", color: "#311b63" }}>
-              Calls
-            </h1>
-            <p style={{ margin: 0, fontSize: "16px", color: "#756597" }}>
+      <main className="calls-layout">
+        <header className="calls-header">
+          <div>
+            <h1>Calls</h1>
+            <p>
               Review recordings, transcripts, and caller details from your
               inbox.
             </p>
           </div>
-          <a
-            href="#"
-            onClick={handleLogout}
-            style={{
-              fontWeight: 600,
-              color: "#5a189a",
-              textDecoration: "none",
-            }}
-          >
+          <a href="#" onClick={handleLogout} className="logout-link">
             Log out
           </a>
         </header>
 
         <section
-          style={{
-            display: "grid",
-            gridTemplateColumns: "320px 1fr",
-            gap: "28px",
-            alignItems: "flex-start",
-          }}
+          className={
+            isInboxCollapsed ? "calls-content inbox-collapsed" : "calls-content"
+          }
         >
           <article
-            style={{
-              borderRadius: "24px",
-              border: "1px solid #ede3ff",
-              backgroundColor: "#ffffff",
-              boxShadow: "0 22px 48px rgba(60, 15, 115, 0.15)",
-              padding: "24px 0 16px",
-              display: "flex",
-              flexDirection: "column",
-              height: "calc(100vh - 180px)",
-            }}
+            className={isInboxCollapsed ? "call-list collapsed" : "call-list"}
           >
-            <header style={{ padding: "0 24px 16px" }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "4px",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      textTransform: "uppercase",
-                      color: "#7c6f92",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Inbox
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "18px",
-                      fontWeight: 700,
-                      color: "#2d1f47",
-                    }}
-                  >
-                    Archived ({data.length})
-                  </span>
-                </div>
+            {isInboxCollapsed ? (
+              <div className="A">
                 <button
                   type="button"
-                  style={{
-                    borderRadius: "10px",
-                    border: "1px solid #e6defb",
-                    backgroundColor: "#ffffff",
-                    color: "#5a189a",
-                    fontWeight: 600,
-                    padding: "8px 14px",
-                    cursor: "pointer",
-                  }}
+                  className="call-list-toggle-button"
+                  onClick={() => setIsInboxCollapsed(false)}
+                  aria-label="Expand inbox"
                 >
-                  Filter
+                  <TbLayoutSidebarRightCollapseFilled
+                    size={20}
+                    aria-hidden="true"
+                    color="#5a189a"
+                  />
                 </button>
               </div>
-            </header>
-            <div style={{ overflowY: "auto", padding: "0 8px" }}>
-              <ul
-                style={{
-                  listStyle: "none",
-                  margin: 0,
-                  padding: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                }}
-              >
-                {loading && data.length === 0 ? (
-                  <li
-                    style={{
-                      padding: "16px",
-                      textAlign: "center",
-                      color: "#756597",
-                    }}
-                  >
-                    Loading calls...
-                  </li>
-                ) : null}
-                {data.map((call) => {
-                  const isSelected = call.id === selectedCallId;
-                  const displayName = call.callerName ?? "Unknown caller";
-                  const timestamp = call.startedAt
-                    ? new Date(call.startedAt).toLocaleString()
-                    : "Unknown time";
-                  return (
-                    <li key={call.id}>
+            ) : (
+              <>
+                <header className="call-list-header">
+                  <div>
+                    <span className="call-list-heading-label">Inbox</span>
+                    <span className="call-list-heading-value">
+                      Archived ({data.length})
+                    </span>
+                  </div>
+                  <div className="call-list-header-actions">
+                    <button type="button" className="call-list-filter-button">
+                      Filter
+                    </button>
+                    <button
+                      type="button"
+                      className="call-list-toggle-button"
+                      onClick={() => setIsInboxCollapsed(true)}
+                      aria-label="Collapse inbox"
+                    >
+                      <TbLayoutSidebarLeftCollapseFilled
+                        size={20}
+                        aria-hidden="true"
+                        color="#5a189a"
+                      />
+                    </button>
+                  </div>
+                </header>
+
+                <div className="call-list-body">
+                  {loading && data.length === 0 ? (
+                    <div className="call-list-empty">Loading calls…</div>
+                  ) : null}
+                  <ul className="call-list-items">
+                    {data.map((call) => {
+                      const isSelected = call.id === selectedCallId;
+                      const preview = getSummaryPreview(call);
+                      const relativeLabel = formatRelativeTimestamp(
+                        call.startedAt
+                      );
+                      const callerDisplayName = resolveCallerName(call);
+                      const callerNumber = call.fromNumber ?? "";
+                      return (
+                        <li key={call.id}>
+                          <button
+                            type="button"
+                            className={
+                              isSelected ? "call-item selected" : "call-item"
+                            }
+                            onClick={() => setSelectedCallId(call.id)}
+                          >
+                            <div className="call-item-heading">
+                              <span className="call-item-name">
+                                {callerDisplayName}
+                              </span>
+                              <time className="call-item-time">
+                                {formatAbsoluteTimestamp(call.startedAt)}
+                              </time>
+                            </div>
+                            <div className="call-item-subheading">
+                              <span className="call-item-number">
+                                {callerNumber}
+                              </span>
+                              <span
+                                className={
+                                  call.isStarred
+                                    ? "call-item-star starred"
+                                    : "call-item-star"
+                                }
+                              >
+                                ★
+                              </span>
+                            </div>
+                            {preview ? (
+                              <p className="call-item-preview">{preview}</p>
+                            ) : null}
+                            <p className="call-item-status">
+                              Status: {call.status}
+                              {relativeLabel ? ` • ${relativeLabel}` : ""}
+                            </p>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {meta?.hasMore ? (
+                    <div className="call-list-footer">
                       <button
                         type="button"
-                        onClick={() => setSelectedCallId(call.id)}
-                        style={{
-                          width: "100%",
-                          border: "none",
-                          borderRadius: "16px",
-                          backgroundColor: isSelected ? "#f1ecff" : "#ffffff",
-                          boxShadow: isSelected
-                            ? "0 12px 28px rgba(60, 15, 115, 0.18)"
-                            : "none",
-                          padding: "16px",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "6px",
-                          textAlign: "left",
-                          cursor: "pointer",
-                        }}
+                        className="call-list-load-more"
+                        onClick={handleLoadOlderCalls}
                       >
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <span style={{ fontWeight: 700, color: "#2d1f47" }}>
-                            {displayName}
-                          </span>
-                          <span style={{ fontSize: "12px", color: "#9183aa" }}>
-                            {timestamp}
-                          </span>
-                        </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <span style={{ fontSize: "12px", color: "#9183aa" }}>
-                            {call.fromNumber ?? "Unknown number"}
-                          </span>
-                          <span
-                            aria-hidden="true"
-                            style={{
-                              fontSize: "12px",
-                              color: call.isStarred ? "#7c3aed" : "#c4b5fd",
-                              fontWeight: 700,
-                            }}
-                          >
-                            ★
-                          </span>
-                        </div>
-                        <p
-                          style={{
-                            margin: 0,
-                            fontSize: "13px",
-                            color: "#665983",
-                          }}
-                        >
-                          Status: {call.status}
-                        </p>
+                        Load older calls
                       </button>
-                    </li>
-                  );
-                })}
-              </ul>
-              {meta?.hasMore ? (
-                <div style={{ padding: "12px", textAlign: "center" }}>
-                  <button
-                    type="button"
-                    onClick={handleLoadOlderCalls}
-                    style={{
-                      borderRadius: "12px",
-                      border: "1px solid #e6defb",
-                      backgroundColor: "#ffffff",
-                      color: "#5a189a",
-                      fontWeight: 600,
-                      padding: "10px 18px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Load older calls
-                  </button>
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-            </div>
+              </>
+            )}
           </article>
 
-          <article
-            style={{
-              borderRadius: "24px",
-              border: "1px solid #ede3ff",
-              backgroundColor: "#ffffff",
-              boxShadow: "0 24px 60px rgba(60, 15, 115, 0.15)",
-              padding: "32px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "28px",
-            }}
-          >
+          <article className="call-details">
             {selectedCall ? (
-              <div style={{ color: "#311b63" }}>
-                <h2 style={{ margin: 0, fontSize: "22px" }}>
-                  Call #{selectedCall.id}
-                </h2>
-                <p style={{ marginTop: "12px", color: "#5a4a7a" }}>
-                  Detailed view coming soon. Caller:{" "}
-                  {selectedCall.callerName ?? "Unknown"}
-                </p>
-              </div>
+              <SelectedCallDetails
+                call={selectedCall}
+                starredCount={starredCount}
+                onToggleStar={() => handleToggleStar(selectedCall)}
+                onArchive={() => handleArchiveStatus(selectedCall, "archived")}
+                onUnarchive={() =>
+                  handleArchiveStatus(selectedCall, "completed")
+                }
+                isStarUpdating={isStarUpdating}
+                isArchiveUpdating={isArchiveUpdating}
+              />
             ) : (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "12px",
-                  minHeight: "420px",
-                  color: "#7c6f92",
-                }}
-              >
-                <span style={{ fontSize: "18px", fontWeight: 600 }}>
-                  Select a call to review the details
-                </span>
-                <span style={{ fontSize: "14px" }}>
-                  Choose a call from the inbox to see details here.
-                </span>
+              <div className="call-details-empty">
+                <span>Select a call to review the details</span>
+                <span>Choose a call from the inbox to see details here.</span>
               </div>
             )}
           </article>
         </section>
       </main>
+    </div>
+  );
+}
+
+type SelectedCallDetailsProps = {
+  call: CallListItem;
+  starredCount: number;
+  onToggleStar: () => void;
+  onArchive: () => void;
+  onUnarchive: () => void;
+  isStarUpdating: boolean;
+  isArchiveUpdating: boolean;
+};
+
+type CallSectionId = "summary" | "transcript" | "notes";
+
+type CallDetailSection = {
+  id: CallSectionId;
+  label: string;
+  content: ReactNode;
+};
+
+function SelectedCallDetails({
+  call,
+  starredCount,
+  onToggleStar,
+  onArchive,
+  onUnarchive,
+  isStarUpdating,
+  isArchiveUpdating,
+}: SelectedCallDetailsProps) {
+  const timeline = useMemo(
+    () => buildTimeline(call.transcriptMessages),
+    [call.transcriptMessages]
+  );
+  const summaryEntries = useMemo(() => extractSummaryEntries(call), [call]);
+  const summaryTags = useMemo(
+    () => extractSummaryTags(call.summary),
+    [call.summary]
+  );
+
+  const callTimestampLabel = formatAbsoluteTimestamp(call.startedAt);
+  const relativeLabel = formatRelativeTimestamp(call.startedAt);
+  const durationLabel = formatDuration(call.durationSeconds);
+  const statusLabel = call.status === "archived" ? "Archived" : call.status;
+
+  const sections = useMemo<CallDetailSection[]>(() => {
+    const items: CallDetailSection[] = [
+      {
+        id: "summary",
+        label: "Summary",
+        content: (
+          <div className="selected-call-summary">
+            <div className="selected-call-summary-card">
+              <h3>Call Summary</h3>
+              <ul>
+                {summaryEntries.map((entry) => (
+                  <li key={entry.label}>
+                    <span className="summary-label">{entry.label}</span>
+                    <span className="summary-value">{entry.value ?? "—"}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="selected-call-tags">
+                {summaryTags.map((tag) => (
+                  <span key={tag} className="call-tag">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <aside className="selected-call-sidebar">
+              <div className="selected-call-sidebar-card">
+                <h4>Caller</h4>
+                <p>{call.callerName ?? "Unknown"}</p>
+                <h4>Business Line</h4>
+                <p>{call.toNumber ?? "—"}</p>
+                <h4>Status</h4>
+                <p>
+                  {statusLabel}
+                  {call.isStarred ? " • Starred" : ""}
+                </p>
+                <h4>Duration</h4>
+                <p>{durationLabel}</p>
+                <h4>Starred calls</h4>
+                <p>{starredCount}</p>
+                <button
+                  type="button"
+                  className="selected-call-action"
+                  onClick={() => window.open("/app/contacts", "_self")}
+                >
+                  View Contact
+                </button>
+              </div>
+              {call.recordingUrl ? (
+                <div className="selected-call-recording">
+                  <h4>Call Recording</h4>
+                  <audio
+                    controls
+                    src={call.recordingUrl}
+                    className="call-audio-player"
+                  >
+                    <track kind="captions" />
+                  </audio>
+                </div>
+              ) : null}
+            </aside>
+          </div>
+        ),
+      },
+      {
+        id: "transcript",
+        label: "Transcript",
+        content: (
+          <div className="selected-call-transcript">
+            <div className="selected-call-transcript-header">
+              <h3>Transcript</h3>
+              <span className="selected-call-transcript-meta">
+                Starred calls: {starredCount}
+              </span>
+            </div>
+            {timeline.length === 0 ? (
+              <div className="selected-call-transcript-empty">
+                Transcript unavailable.
+              </div>
+            ) : (
+              <ol className="selected-call-transcript-timeline">
+                {timeline.map((entry) => (
+                  <li
+                    key={entry.id}
+                    className={
+                      entry.speaker === "agent"
+                        ? "message agent"
+                        : entry.speaker === "caller"
+                        ? "message caller"
+                        : "message"
+                    }
+                  >
+                    <div className="message-content">
+                      <span className="message-speaker">
+                        {entry.speakerLabel}
+                      </span>
+                      <p>{entry.content}</p>
+                    </div>
+                    <time className="message-time">{entry.timestampLabel}</time>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        ),
+      },
+    ];
+
+    if (call.transcriptText) {
+      items.push({
+        id: "notes",
+        label: "Transcript Notes",
+        content: (
+          <div className="selected-call-transcript-text">
+            <h3>Transcript Notes</h3>
+            <p>{call.transcriptText}</p>
+          </div>
+        ),
+      });
+    }
+
+    return items;
+  }, [
+    call,
+    durationLabel,
+    starredCount,
+    statusLabel,
+    summaryEntries,
+    summaryTags,
+    timeline,
+  ]);
+
+  const sectionIds = useMemo<CallSectionId[]>(
+    () => sections.map((section) => section.id),
+    [sections]
+  );
+
+  const [sectionOrder, setSectionOrder] = useState<CallSectionId[]>(sectionIds);
+  const [collapsedSections, setCollapsedSections] = useState<
+    Record<CallSectionId, boolean>
+  >(() => {
+    return sectionIds.reduce((accumulator, id) => {
+      accumulator[id] = false;
+      return accumulator;
+    }, {} as Record<CallSectionId, boolean>);
+  });
+  const [activeDropTarget, setActiveDropTarget] =
+    useState<CallSectionId | null>(null);
+  const draggingSectionId = useRef<CallSectionId | null>(null);
+
+  useEffect(() => {
+    setSectionOrder(sectionIds);
+    setCollapsedSections((current) => {
+      const next: Record<CallSectionId, boolean> = {} as Record<
+        CallSectionId,
+        boolean
+      >;
+      sectionIds.forEach((id) => {
+        next[id] = current[id] ?? false;
+      });
+      return next;
+    });
+  }, [call.id, sectionIds]);
+
+  const orderedSections = useMemo<CallDetailSection[]>(() => {
+    const sectionMap = new Map(
+      sections.map((section) => [section.id, section])
+    );
+    const result: CallDetailSection[] = [];
+    sectionOrder.forEach((id) => {
+      const section = sectionMap.get(id);
+      if (section) {
+        result.push(section);
+      }
+    });
+    sections.forEach((section) => {
+      if (!sectionOrder.includes(section.id)) {
+        result.push(section);
+      }
+    });
+    return result;
+  }, [sectionOrder, sections]);
+
+  const toggleSection = useCallback((sectionId: CallSectionId) => {
+    setCollapsedSections((current) => ({
+      ...current,
+      [sectionId]: !current[sectionId],
+    }));
+  }, []);
+
+  const reorderSections = useCallback(
+    (sourceId: CallSectionId, targetId: CallSectionId) => {
+      if (sourceId === targetId) return;
+      setSectionOrder((current) => {
+        const next = [...current];
+        const sourceIndex = next.indexOf(sourceId);
+        const targetIndex = next.indexOf(targetId);
+        if (sourceIndex === -1 || targetIndex === -1) return current;
+        next.splice(sourceIndex, 1);
+        next.splice(targetIndex, 0, sourceId);
+        return next;
+      });
+    },
+    []
+  );
+
+  const handleDragStart = useCallback(
+    (event: DragEvent<HTMLButtonElement>, sectionId: CallSectionId) => {
+      draggingSectionId.current = sectionId;
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", sectionId);
+    },
+    []
+  );
+
+  const handleDragEnter = useCallback(
+    (event: DragEvent<HTMLDivElement>, sectionId: CallSectionId) => {
+      event.preventDefault();
+      setActiveDropTarget(sectionId);
+    },
+    []
+  );
+
+  const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }, []);
+
+  const handleDragLeave = useCallback(
+    (event: DragEvent<HTMLDivElement>, sectionId: CallSectionId) => {
+      event.preventDefault();
+      const relatedTarget = event.relatedTarget as Node | null;
+      if (relatedTarget && event.currentTarget.contains(relatedTarget)) {
+        return;
+      }
+      setActiveDropTarget((current) =>
+        current === sectionId ? null : current
+      );
+    },
+    []
+  );
+
+  const handleDrop = useCallback(
+    (event: DragEvent<HTMLDivElement>, targetId: CallSectionId) => {
+      event.preventDefault();
+      const sourceId =
+        draggingSectionId.current ??
+        ((event.dataTransfer.getData("text/plain") as CallSectionId | "") ||
+          null);
+      draggingSectionId.current = null;
+      setActiveDropTarget(null);
+      if (!sourceId || sourceId === targetId) return;
+      reorderSections(sourceId, targetId);
+    },
+    [reorderSections]
+  );
+
+  const handleDragEnd = useCallback(() => {
+    draggingSectionId.current = null;
+    setActiveDropTarget(null);
+  }, []);
+
+  return (
+    <div className="selected-call">
+      <header className="selected-call-header">
+        <div>
+          <span>Call started at </span>
+          <h2>{callTimestampLabel}</h2>
+          {relativeLabel ? (
+            <span className="selected-call-relative-time">{relativeLabel}</span>
+          ) : null}
+        </div>
+        <div className="selected-call-actions">
+          <button
+            type="button"
+            className="selected-call-action"
+            onClick={onToggleStar}
+            disabled={isStarUpdating}
+          >
+            {call.isStarred ? "Unstar" : "Star"}
+          </button>
+          {call.status === "archived" ? (
+            <button
+              type="button"
+              className="selected-call-action"
+              onClick={onUnarchive}
+              disabled={isArchiveUpdating}
+            >
+              Unarchive
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="selected-call-action"
+              onClick={onArchive}
+              disabled={isArchiveUpdating}
+            >
+              Archive
+            </button>
+          )}
+        </div>
+      </header>
+      <div className="selected-call-section-list">
+        {orderedSections.map((section) => {
+          const isCollapsed = collapsedSections[section.id] ?? false;
+          const wrapperClassName = [
+            "call-collapsible-section",
+            isCollapsed ? "is-collapsed" : "",
+            activeDropTarget === section.id ? "drop-target" : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
+
+          return (
+            <div
+              key={section.id}
+              className={wrapperClassName}
+              onDragEnter={(event) => handleDragEnter(event, section.id)}
+              onDragOver={handleDragOver}
+              onDragLeave={(event) => handleDragLeave(event, section.id)}
+              onDrop={(event) => handleDrop(event, section.id)}
+            >
+              <div className="call-collapsible-header">
+                <button
+                  type="button"
+                  className="call-drag-handle"
+                  draggable
+                  onDragStart={(event) => handleDragStart(event, section.id)}
+                  onDragEnd={handleDragEnd}
+                  aria-label={`Move ${section.label}`}
+                >
+                  <TbGripVertical size={18} aria-hidden="true" />
+                  <span className="sr-only">Move {section.label}</span>
+                </button>
+                <span className="call-collapsible-title">{section.label}</span>
+                <button
+                  type="button"
+                  className="call-collapse-toggle"
+                  onClick={() => toggleSection(section.id)}
+                  aria-expanded={!isCollapsed}
+                  aria-controls={`call-section-${section.id}`}
+                >
+                  <TbChevronDown
+                    size={18}
+                    aria-hidden="true"
+                    className={
+                      isCollapsed
+                        ? "call-collapse-icon is-collapsed"
+                        : "call-collapse-icon"
+                    }
+                  />
+                  <span className="sr-only">
+                    {isCollapsed ? "Expand" : "Collapse"} {section.label}
+                  </span>
+                </button>
+              </div>
+              <div
+                id={`call-section-${section.id}`}
+                className={
+                  isCollapsed
+                    ? "call-collapsible-body collapsed"
+                    : "call-collapsible-body"
+                }
+              >
+                {section.content}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
