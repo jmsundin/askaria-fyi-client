@@ -1,4 +1,5 @@
 .calls-page {
+  width: 100%;
   display: flex;
   min-height: 100vh;
   background: linear-gradient(135deg, #f6f7fb 0%, #ffffff 60%, #f6f1ff 100%);
@@ -312,6 +313,21 @@
 .call-collapsible-section.drop-target {
   border-color: #c4b5fd;
   box-shadow: 0 18px 36px rgba(90, 24, 154, 0.2);
+}
+
+.call-drop-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px 16px 12px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px dashed rgba(124, 58, 237, 0.6);
+  background: rgba(124, 58, 237, 0.08);
+  color: #5a189a;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.01em;
 }
 
 .call-collapsible-section.is-collapsed {

@@ -10,6 +10,11 @@ export type CallFilterState = {
   toNumber?: string;
 };
 
+export type CallLayoutPreferences = {
+  sectionOrder: string[];
+  collapsedSections: Record<string, boolean>;
+};
+
 export type TranscriptMessage = {
   id: string;
   speaker: string;
@@ -270,4 +275,62 @@ export function useCallsQuery(): UseCallsQueryResult {
     }),
     [state.items, state.loading, state.error, state.meta, load, getStoredCursor]
   );
+}
+
+export async function fetchCallLayoutPreferences(): Promise<CallLayoutPreferences> {
+  const response = await authFetch("/call-layout");
+  if (!response.ok) {
+    return {
+      sectionOrder: [],
+      collapsedSections: {},
+    };
+  }
+
+  const payload = (await response.json()) as
+    | { data?: CallLayoutPreferences }
+    | CallLayoutPreferences;
+
+  if (payload && typeof payload === "object" && "data" in payload) {
+    const data = payload.data;
+    if (data && typeof data === "object") {
+      return {
+        sectionOrder: Array.isArray(data.sectionOrder) ? data.sectionOrder : [],
+        collapsedSections:
+          (data.collapsedSections as Record<string, boolean>) ?? {},
+      };
+    }
+  }
+
+  if (payload && typeof payload === "object") {
+    const candidate = payload as CallLayoutPreferences;
+    return {
+      sectionOrder: Array.isArray(candidate.sectionOrder)
+        ? candidate.sectionOrder
+        : [],
+      collapsedSections: candidate.collapsedSections ?? {},
+    };
+  }
+
+  return {
+    sectionOrder: [],
+    collapsedSections: {},
+  };
+}
+
+export async function saveCallLayoutPreferences(
+  preferences: CallLayoutPreferences
+): Promise<void> {
+  const response = await authFetch("/call-layout", {
+    method: "PUT",
+    body: JSON.stringify({
+      section_order: preferences.sectionOrder,
+      collapsed_sections: preferences.collapsedSections,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to save call layout preferences (${response.status})`
+    );
+  }
 }

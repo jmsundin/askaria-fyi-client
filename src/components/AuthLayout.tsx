@@ -20,6 +20,7 @@ export default function AuthLayout({
   return (
     <div
       style={{
+        width: "100%",
         minHeight: "100vh",
         display: "flex",
         alignItems: "center",

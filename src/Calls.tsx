@@ -18,10 +18,15 @@ import Sidebar from "./components/Sidebar";
 import { authFetch, clearToken, type AuthUser } from "./auth";
 import type {
   CallFilterState,
+  CallLayoutPreferences,
   CallListItem,
   TranscriptMessage,
 } from "./hooks/useCallsQuery";
-import { useCallsQuery } from "./hooks/useCallsQuery";
+import {
+  fetchCallLayoutPreferences,
+  saveCallLayoutPreferences,
+  useCallsQuery,
+} from "./hooks/useCallsQuery";
 import "./Calls.css";
 
 type SummaryEntry = {
@@ -221,6 +226,8 @@ export default function Calls() {
   const [isStarUpdating, setIsStarUpdating] = useState(false);
   const [isArchiveUpdating, setIsArchiveUpdating] = useState(false);
   const [isInboxCollapsed, setIsInboxCollapsed] = useState(false);
+  const [layoutPreferences, setLayoutPreferences] =
+    useState<CallLayoutPreferences | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -252,6 +259,52 @@ export default function Calls() {
     if (!user) return;
     load({ filters });
   }, [user, filters, load]);
+
+  useEffect(() => {
+    if (!user) return;
+    let isActive = true;
+    (async () => {
+      const preferences = await fetchCallLayoutPreferences();
+      if (!isActive) return;
+      setLayoutPreferences(preferences);
+    })();
+    return () => {
+      isActive = false;
+    };
+  }, [user]);
+  useEffect(() => {
+    if (!user) return;
+    let isActive = true;
+    (async () => {
+      const preferences = await fetchCallLayoutPreferences();
+      if (!isActive) return;
+      setLayoutPreferences(preferences);
+    })();
+    return () => {
+      isActive = false;
+    };
+  }, [user]);
+
+  const handleLayoutChange = useCallback(
+    (preferences: CallLayoutPreferences) => {
+      setLayoutPreferences(preferences);
+    },
+    []
+  );
+
+  const persistLayoutPreferences = useCallback(
+    async (preferences: CallLayoutPreferences) => {
+      try {
+        await saveCallLayoutPreferences(preferences);
+        setLayoutPreferences(preferences);
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.warn("Failed to persist call layout preferences", error);
+        }
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     if (data.length > 0 && selectedCallId === null) {
@@ -465,6 +518,9 @@ export default function Calls() {
                 }
                 isStarUpdating={isStarUpdating}
                 isArchiveUpdating={isArchiveUpdating}
+                layoutPreferences={layoutPreferences}
+                onLayoutChange={handleLayoutChange}
+                onPersistLayout={persistLayoutPreferences}
               />
             ) : (
               <div className="call-details-empty">
@@ -487,6 +543,9 @@ type SelectedCallDetailsProps = {
   onUnarchive: () => void;
   isStarUpdating: boolean;
   isArchiveUpdating: boolean;
+  layoutPreferences: CallLayoutPreferences | null;
+  onLayoutChange: (preferences: CallLayoutPreferences) => void;
+  onPersistLayout: (preferences: CallLayoutPreferences) => void;
 };
 
 type CallSectionId = "summary" | "transcript" | "notes";
@@ -505,6 +564,9 @@ function SelectedCallDetails({
   onUnarchive,
   isStarUpdating,
   isArchiveUpdating,
+  layoutPreferences,
+  onLayoutChange,
+  onPersistLayout,
 }: SelectedCallDetailsProps) {
   const timeline = useMemo(
     () => buildTimeline(call.transcriptMessages),
@@ -672,7 +734,36 @@ function SelectedCallDetails({
   const draggingSectionId = useRef<CallSectionId | null>(null);
 
   useEffect(() => {
-    setSectionOrder(sectionIds);
+    if (!layoutPreferences) return;
+    const persistedOrder = layoutPreferences.sectionOrder.filter(
+      (id): id is CallSectionId => sectionIds.includes(id as CallSectionId)
+    );
+    if (persistedOrder.length > 0) {
+      setSectionOrder(persistedOrder);
+    }
+    setCollapsedSections((current) => {
+      const next: Record<CallSectionId, boolean> = {} as Record<
+        CallSectionId,
+        boolean
+      >;
+      sectionIds.forEach((id) => {
+        const saved = layoutPreferences.collapsedSections[id];
+        if (saved === undefined || saved === null) {
+          next[id] = current[id] ?? false;
+        } else {
+          next[id] = Boolean(saved);
+        }
+      });
+      return next;
+    });
+  }, [layoutPreferences, sectionIds]);
+
+  useEffect(() => {
+    setSectionOrder((current) => {
+      const retained = current.filter((id) => sectionIds.includes(id));
+      const missing = sectionIds.filter((id) => !retained.includes(id));
+      return [...retained, ...missing];
+    });
     setCollapsedSections((current) => {
       const next: Record<CallSectionId, boolean> = {} as Record<
         CallSectionId,
@@ -683,7 +774,7 @@ function SelectedCallDetails({
       });
       return next;
     });
-  }, [call.id, sectionIds]);
+  }, [sectionIds]);
 
   const orderedSections = useMemo<CallDetailSection[]>(() => {
     const sectionMap = new Map(
@@ -704,12 +795,33 @@ function SelectedCallDetails({
     return result;
   }, [sectionOrder, sections]);
 
-  const toggleSection = useCallback((sectionId: CallSectionId) => {
-    setCollapsedSections((current) => ({
-      ...current,
-      [sectionId]: !current[sectionId],
-    }));
-  }, []);
+  const persistLayout = useCallback(
+    (order: CallSectionId[], collapsed: Record<CallSectionId, boolean>) => {
+      onLayoutChange({
+        sectionOrder: order,
+        collapsedSections: collapsed,
+      });
+      onPersistLayout({
+        sectionOrder: order,
+        collapsedSections: collapsed,
+      });
+    },
+    [onLayoutChange, onPersistLayout]
+  );
+
+  const toggleSection = useCallback(
+    (sectionId: CallSectionId) => {
+      setCollapsedSections((current) => {
+        const next = {
+          ...current,
+          [sectionId]: !current[sectionId],
+        };
+        persistLayout(sectionOrder, next);
+        return next;
+      });
+    },
+    [persistLayout, sectionOrder]
+  );
 
   const reorderSections = useCallback(
     (sourceId: CallSectionId, targetId: CallSectionId) => {
@@ -721,10 +833,11 @@ function SelectedCallDetails({
         if (sourceIndex === -1 || targetIndex === -1) return current;
         next.splice(sourceIndex, 1);
         next.splice(targetIndex, 0, sourceId);
+        persistLayout(next, collapsedSections);
         return next;
       });
     },
-    []
+    [collapsedSections, persistLayout]
   );
 
   const handleDragStart = useCallback(
@@ -843,6 +956,11 @@ function SelectedCallDetails({
               onDragLeave={(event) => handleDragLeave(event, section.id)}
               onDrop={(event) => handleDrop(event, section.id)}
             >
+              {activeDropTarget === section.id ? (
+                <div className="call-drop-indicator">
+                  <span>Release to place here</span>
+                </div>
+              ) : null}
               <div className="call-collapsible-header">
                 <button
                   type="button"
