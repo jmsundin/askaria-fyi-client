@@ -5,6 +5,8 @@ export default function StaticLanding() {
   return (
     <main
       style={{
+        width: "80%",
+        margin: "0 auto",
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",

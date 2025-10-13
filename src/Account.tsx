@@ -2,7 +2,9 @@ import {
   useEffect,
   useMemo,
   useState,
+  type ChangeEvent,
   type CSSProperties,
+  type FormEvent,
   type MouseEvent,
 } from "react";
 import Sidebar from "./components/Sidebar";
@@ -24,6 +26,23 @@ type TabbedCard = {
   onPrimaryAction?: () => void;
   secondaryContent?: string;
 };
+
+type AccountInfoCardProps = {
+  accentIconLabel: string;
+  emailDraft: string;
+  emailValue: string;
+  businessPhoneDraft: string;
+  businessPhoneValue: string;
+  isEditing: boolean;
+  emailErrorMessage: string | null;
+  onEmailChange: (value: string) => void;
+  onBusinessPhoneChange: (value: string) => void;
+  onEditRequest: () => void;
+  onCancel: () => void;
+  onSave: (value: { email: string; businessPhone: string }) => void;
+};
+
+const EMAIL_FORMAT_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const accountPageContainerStyles: CSSProperties = {
   width: "100%",
@@ -282,15 +301,77 @@ function AccountSettingsTab({
 }: {
   authenticatedUser: AuthUser | null;
 }) {
-  const tabCards: TabbedCard[] = [
-    {
-      title: "Account",
-      description:
-        authenticatedUser?.email ??
-        "Your primary login email will be used for authentication.",
-      accentIconLabel: "AC",
-      primaryActionLabel: "Manage",
-    },
+  const [emailValue, setEmailValue] = useState(authenticatedUser?.email ?? "");
+  const [emailDraft, setEmailDraft] = useState(authenticatedUser?.email ?? "");
+  const [businessPhoneValue, setBusinessPhoneValue] = useState(
+    authenticatedUser?.agent_profile?.business_phone_number ?? ""
+  );
+  const [businessPhoneDraft, setBusinessPhoneDraft] = useState(
+    authenticatedUser?.agent_profile?.business_phone_number ?? ""
+  );
+  const [isEditingAccountInfo, setIsEditingAccountInfo] = useState(false);
+  const [emailErrorMessage, setEmailErrorMessage] = useState<string | null>(
+    null
+  );
+
+  useEffect(() => {
+    const resolvedEmail = authenticatedUser?.email ?? "";
+    const resolvedBusinessPhone =
+      authenticatedUser?.agent_profile?.business_phone_number ?? "";
+    setEmailValue(resolvedEmail);
+    setBusinessPhoneValue(resolvedBusinessPhone);
+    if (!isEditingAccountInfo) {
+      setEmailDraft(resolvedEmail);
+      setBusinessPhoneDraft(resolvedBusinessPhone);
+      setEmailErrorMessage(null);
+    }
+  }, [authenticatedUser, isEditingAccountInfo]);
+
+  function handleEmailDraftChange(value: string) {
+    if (emailErrorMessage) setEmailErrorMessage(null);
+    setEmailDraft(value);
+  }
+
+  function handleBusinessPhoneDraftChange(value: string) {
+    setBusinessPhoneDraft(value);
+  }
+
+  function handleEditRequest() {
+    setEmailDraft(emailValue);
+    setBusinessPhoneDraft(businessPhoneValue);
+    setIsEditingAccountInfo(true);
+    setEmailErrorMessage(null);
+  }
+
+  function handleCancelEditing() {
+    setEmailDraft(emailValue);
+    setBusinessPhoneDraft(businessPhoneValue);
+    setIsEditingAccountInfo(false);
+    setEmailErrorMessage(null);
+  }
+
+  function handleSaveAccountInfo({
+    email,
+    businessPhone,
+  }: {
+    email: string;
+    businessPhone: string;
+  }) {
+    const trimmedEmail = email.trim();
+    const trimmedBusinessPhone = businessPhone.trim();
+    if (!EMAIL_FORMAT_PATTERN.test(trimmedEmail)) {
+      setEmailErrorMessage("Enter a valid email address.");
+      return;
+    }
+    setEmailValue(trimmedEmail);
+    setEmailDraft(trimmedEmail);
+    setBusinessPhoneValue(trimmedBusinessPhone);
+    setBusinessPhoneDraft(trimmedBusinessPhone);
+    setIsEditingAccountInfo(false);
+    setEmailErrorMessage(null);
+  }
+
+  const secondaryCards: TabbedCard[] = [
     {
       title: "Recordings",
       description: "Control the recordings stored in your account.",
@@ -330,7 +411,21 @@ function AccountSettingsTab({
           gap: "20px",
         }}
       >
-        {tabCards.map((card) => (
+        <AccountInfoCard
+          accentIconLabel="AI"
+          emailDraft={emailDraft}
+          emailValue={emailValue}
+          businessPhoneDraft={businessPhoneDraft}
+          businessPhoneValue={businessPhoneValue}
+          isEditing={isEditingAccountInfo}
+          emailErrorMessage={emailErrorMessage}
+          onEmailChange={handleEmailDraftChange}
+          onBusinessPhoneChange={handleBusinessPhoneDraftChange}
+          onEditRequest={handleEditRequest}
+          onCancel={handleCancelEditing}
+          onSave={handleSaveAccountInfo}
+        />
+        {secondaryCards.map((card) => (
           <div
             key={card.title}
             style={{
@@ -406,6 +501,239 @@ function AccountSettingsTab({
         ))}
       </div>
     </article>
+  );
+}
+
+function AccountInfoCard({
+  accentIconLabel,
+  emailDraft,
+  emailValue,
+  businessPhoneDraft,
+  businessPhoneValue,
+  isEditing,
+  emailErrorMessage,
+  onEmailChange,
+  onBusinessPhoneChange,
+  onEditRequest,
+  onCancel,
+  onSave,
+}: AccountInfoCardProps) {
+  const trimmedEmailDraft = emailDraft.trim();
+  const trimmedEmailValue = emailValue.trim();
+  const trimmedBusinessPhoneDraft = businessPhoneDraft.trim();
+  const trimmedBusinessPhoneValue = businessPhoneValue.trim();
+  const hasChanges =
+    trimmedEmailDraft !== trimmedEmailValue ||
+    trimmedBusinessPhoneDraft !== trimmedBusinessPhoneValue;
+  const isSaveDisabled = !hasChanges || trimmedEmailDraft.length === 0;
+  const resolvedEmailErrorMessage =
+    emailErrorMessage ||
+    (isEditing &&
+    trimmedEmailDraft.length > 0 &&
+    !EMAIL_FORMAT_PATTERN.test(trimmedEmailDraft)
+      ? "Enter a valid email address."
+      : null);
+
+  function handleInputChange(event: ChangeEvent<HTMLInputElement>) {
+    onEmailChange(event.target.value);
+  }
+
+  function handleBusinessPhoneInputChange(
+    event: ChangeEvent<HTMLInputElement>
+  ) {
+    onBusinessPhoneChange(event.target.value);
+  }
+
+  function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (isSaveDisabled) return;
+    onSave({ email: emailDraft, businessPhone: businessPhoneDraft });
+  }
+
+  return (
+    <form
+      onSubmit={handleFormSubmit}
+      noValidate
+      style={{
+        borderRadius: "22px",
+        border: "1px solid #f2eafd",
+        background:
+          "linear-gradient(180deg, rgba(124, 58, 237, 0.08) 0%, rgba(236, 72, 153, 0.12) 100%)",
+        padding: "24px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "16px",
+        color: "#3b2b65",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "12px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+          }}
+        >
+          <span
+            aria-hidden="true"
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "12px",
+              backgroundColor: "rgba(60, 15, 115, 0.12)",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: 700,
+              color: "#3c0f73",
+            }}
+          >
+            {accentIconLabel}
+          </span>
+          <h3 style={{ margin: 0, fontSize: "17px" }}>Account Info</h3>
+        </div>
+        {!isEditing ? (
+          <button
+            type="button"
+            onClick={onEditRequest}
+            style={{
+              borderRadius: "999px",
+              border: "none",
+              background: "linear-gradient(90deg, #7c3aed, #ec4899)",
+              color: "#ffffff",
+              fontWeight: 600,
+              padding: "10px 22px",
+              boxShadow: "0 18px 32px rgba(124, 58, 237, 0.32)",
+              cursor: "pointer",
+            }}
+          >
+            Edit
+          </button>
+        ) : null}
+      </div>
+      <label
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+          fontSize: "13px",
+          color: "#7c6d98",
+        }}
+      >
+        <span>Primary email</span>
+        <input
+          type="email"
+          value={emailDraft}
+          onChange={handleInputChange}
+          readOnly={!isEditing}
+          spellCheck={false}
+          style={{
+            borderRadius: "14px",
+            border: "1px solid rgba(124, 58, 237, 0.32)",
+            backgroundColor: "rgba(255, 255, 255, 0.88)",
+            padding: "12px 16px",
+            fontSize: "15px",
+            color: "#331b63",
+            outline: "none",
+            boxShadow: isEditing
+              ? "0 0 0 3px rgba(124, 58, 237, 0.16)"
+              : "none",
+            transition: "box-shadow 0.2s ease, border-color 0.2s ease",
+            cursor: isEditing ? "text" : "default",
+          }}
+        />
+      </label>
+      {resolvedEmailErrorMessage ? (
+        <span style={{ color: "#dc2626", fontSize: "13px" }}>
+          {resolvedEmailErrorMessage}
+        </span>
+      ) : null}
+      <label
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+          fontSize: "13px",
+          color: "#7c6d98",
+        }}
+      >
+        <span>Business phone number</span>
+        <input
+          type="tel"
+          value={businessPhoneDraft}
+          onChange={handleBusinessPhoneInputChange}
+          readOnly={!isEditing}
+          spellCheck={false}
+          style={{
+            borderRadius: "14px",
+            border: "1px solid rgba(124, 58, 237, 0.32)",
+            backgroundColor: "rgba(255, 255, 255, 0.88)",
+            padding: "12px 16px",
+            fontSize: "15px",
+            color: "#331b63",
+            outline: "none",
+            boxShadow: isEditing
+              ? "0 0 0 3px rgba(124, 58, 237, 0.16)"
+              : "none",
+            transition: "box-shadow 0.2s ease, border-color 0.2s ease",
+            cursor: isEditing ? "text" : "default",
+          }}
+        />
+      </label>
+      {isEditing ? (
+        <div
+          style={{
+            display: "flex",
+            gap: "12px",
+            marginTop: "8px",
+          }}
+        >
+          <button
+            type="button"
+            onClick={onCancel}
+            style={{
+              borderRadius: "999px",
+              border: "1px solid rgba(124, 58, 237, 0.34)",
+              backgroundColor: "rgba(255, 255, 255, 0.92)",
+              color: "#5a189a",
+              fontWeight: 600,
+              padding: "10px 22px",
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSaveDisabled}
+            style={{
+              borderRadius: "999px",
+              border: "none",
+              background: isSaveDisabled
+                ? "linear-gradient(90deg, rgba(124, 58, 237, 0.42), rgba(236, 72, 153, 0.42))"
+                : "linear-gradient(90deg, #7c3aed, #ec4899)",
+              color: "#ffffff",
+              fontWeight: 600,
+              padding: "10px 22px",
+              boxShadow: isSaveDisabled
+                ? "none"
+                : "0 18px 32px rgba(124, 58, 237, 0.32)",
+              cursor: isSaveDisabled ? "not-allowed" : "pointer",
+              opacity: isSaveDisabled ? 0.7 : 1,
+            }}
+          >
+            Save
+          </button>
+        </div>
+      ) : null}
+    </form>
   );
 }
 
