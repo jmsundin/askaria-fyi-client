@@ -129,13 +129,36 @@ function extractSummaryEntries(call: CallListItem): SummaryEntry[] {
     value: callerName ? String(callerName) : null,
   });
 
-  entries.push({ label: "Phone", value: call.fromNumber });
+  entries.push({ label: "Caller Phone", value: call.fromNumber });
 
   if (typeof summary === "object" && summary) {
     const summaryRecord = summary as Record<string, unknown>;
 
+    if (summaryRecord.callbackPhone) {
+      entries.push({
+        label: "Callback Number",
+        value: String(summaryRecord.callbackPhone),
+      });
+    }
+
     if (summaryRecord.reason) {
       entries.push({ label: "Reason", value: String(summaryRecord.reason) });
+    }
+
+    if (summaryRecord.urgency) {
+      entries.push({
+        label: "Urgency",
+        value: String(summaryRecord.urgency).toUpperCase(),
+      });
+    }
+
+    if (summaryRecord.callbackTime) {
+      const callbackTime = String(summaryRecord.callbackTime);
+      const formattedTime = formatAbsoluteTimestamp(callbackTime);
+      entries.push({
+        label: "Best Time to Call",
+        value: formattedTime,
+      });
     }
 
     if (summaryRecord.notes) {
@@ -172,22 +195,6 @@ function extractSummaryTags(summary: CallListItem["summary"]): string[] {
     .filter((tag): tag is string => Boolean(tag));
 }
 
-function getSummaryPreview(call: CallListItem): string | null {
-  const summary = call.summary ?? {};
-  if (typeof summary === "object" && summary) {
-    const summaryRecord = summary as Record<string, unknown>;
-    if (typeof summaryRecord.preview === "string") return summaryRecord.preview;
-    if (typeof summaryRecord.notes === "string") return summaryRecord.notes;
-    if (typeof summaryRecord.reason === "string") return summaryRecord.reason;
-  }
-
-  if (call.transcriptMessages.length > 0) {
-    return call.transcriptMessages[0].content;
-  }
-
-  return null;
-}
-
 function resolveCallerName(call: CallListItem): string {
   const summary = call.summary;
   if (summary && typeof summary === "object") {
@@ -216,6 +223,33 @@ function resolveCallerName(call: CallListItem): string {
   }
 
   return "";
+}
+
+function extractCallReason(call: CallListItem): string | null {
+  const summary = call.summary;
+  if (summary && typeof summary === "object") {
+    const summaryRecord = summary as Record<string, unknown>;
+    if (typeof summaryRecord.reason === "string") {
+      return summaryRecord.reason;
+    }
+  }
+  return null;
+}
+
+function categorizeCustomer(
+  call: CallListItem,
+  allCalls: CallListItem[]
+): string {
+  const phoneNumber = call.fromNumber;
+  if (!phoneNumber) return "New customer";
+
+  const callsFromNumber = allCalls.filter(
+    (c) => c.fromNumber === phoneNumber
+  ).length;
+
+  if (callsFromNumber > 10) return "Repeat customer";
+  if (callsFromNumber > 1) return "Previous customer";
+  return "New customer";
 }
 
 export default function Calls() {
@@ -441,12 +475,19 @@ export default function Calls() {
                   <ul className="call-list-items">
                     {data.map((call) => {
                       const isSelected = call.id === selectedCallId;
-                      const preview = getSummaryPreview(call);
                       const relativeLabel = formatRelativeTimestamp(
                         call.startedAt
                       );
                       const callerDisplayName = resolveCallerName(call);
-                      const callerNumber = call.fromNumber ?? "";
+                      const callReason = extractCallReason(call);
+                      const customerCategory = categorizeCustomer(call, data);
+                      const urgency =
+                        call.summary &&
+                        typeof call.summary === "object" &&
+                        "urgency" in call.summary
+                          ? String(call.summary.urgency)
+                          : null;
+                      const isUrgent = urgency === "high";
                       return (
                         <li key={call.id}>
                           <button
@@ -458,33 +499,49 @@ export default function Calls() {
                           >
                             <div className="call-item-heading">
                               <span className="call-item-name">
+                                {isUrgent ? "🔴 " : ""}
                                 {callerDisplayName}
                               </span>
-                              <time className="call-item-time">
+                              <time
+                                className="call-item-time"
+                                style={{ color: "#665983" }}
+                              >
                                 {formatAbsoluteTimestamp(call.startedAt)}
                               </time>
                             </div>
-                            <div className="call-item-subheading">
-                              <span className="call-item-number">
-                                {callerNumber}
-                              </span>
-                              <span
-                                className={
-                                  call.isStarred
-                                    ? "call-item-star starred"
-                                    : "call-item-star"
-                                }
+                            {callReason ? (
+                              <p
+                                className="call-item-reason"
+                                style={{ color: "#2d1f47" }}
                               >
-                                ★
-                              </span>
-                            </div>
-                            {preview ? (
-                              <p className="call-item-preview">{preview}</p>
+                                {callReason}
+                              </p>
                             ) : null}
-                            <p className="call-item-status">
-                              Status: {call.status}
-                              {relativeLabel ? ` • ${relativeLabel}` : ""}
-                            </p>
+                            <div className="call-item-metadata">
+                              <span
+                                className="call-item-category"
+                                style={{ color: "#665983" }}
+                              >
+                                {customerCategory}
+                              </span>
+                              {relativeLabel ? (
+                                <>
+                                  <span
+                                    className="call-item-separator"
+                                    style={{ color: "#665983" }}
+                                  >
+                                    {" "}
+                                    •{" "}
+                                  </span>
+                                  <span
+                                    className="call-item-elapsed"
+                                    style={{ color: "#665983" }}
+                                  >
+                                    {relativeLabel}
+                                  </span>
+                                </>
+                              ) : null}
+                            </div>
                           </button>
                         </li>
                       );

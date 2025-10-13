@@ -241,6 +241,29 @@
   line-height: 1.4;
 }
 
+.call-item-reason {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.call-item-metadata {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.call-item-category,
+.call-item-elapsed {
+  font-weight: 500;
+}
+
+.call-item-separator {
+  font-weight: 400;
+}
+
 .call-list-footer {
   padding: 12px;
   text-align: center;
