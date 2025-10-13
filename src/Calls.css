@@ -2,9 +2,9 @@
   width: 100%;
   display: flex;
   min-height: 100vh;
-  background: linear-gradient(135deg, #f6f7fb 0%, #ffffff 60%, #f6f1ff 100%);
-  color: #2d1f47;
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--app-background-gradient);
+  color: var(--text-primary);
+  font-family: inherit;
 }
 
 .calls-layout {
@@ -27,23 +27,23 @@
 .calls-header h1 {
   margin: 0;
   font-size: 30px;
-  color: #311b63;
+  color: var(--text-heading);
 }
 
 .calls-header p {
   margin: 6px 0 0;
   font-size: 16px;
-  color: #756597;
+  color: var(--text-secondary);
 }
 
 .logout-link {
   font-weight: 600;
-  color: #5a189a;
+  color: var(--brand-primary);
   text-decoration: none;
 }
 
 .logout-link:hover {
-  color: #7c3aed;
+  color: var(--link-hover-color);
 }
 
 
@@ -61,9 +61,9 @@
 
 .call-list {
   border-radius: 14px;
-  border: 1px solid #ede3ff;
-  background-color: #ffffff;
-  box-shadow: 0 22px 48px rgba(60, 15, 115, 0.15);
+  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-elevated);
+  box-shadow: var(--shadow-elevated);
   padding: 24px 0 16px;
   display: flex;
   flex-direction: column;
@@ -88,7 +88,7 @@
 .call-list-heading-label {
   font-size: 12px;
   text-transform: uppercase;
-  color: #7c6f92;
+  color: var(--text-tertiary);
   font-weight: 600;
   display: block;
 }
@@ -96,22 +96,23 @@
 .call-list-heading-value {
   font-size: 18px;
   font-weight: 700;
-  color: #2d1f47;
+  color: var(--text-primary);
 }
 
 .call-list-filter-button {
   border-radius: 10px;
-  border: 1px solid #e6defb;
-  background-color: #ffffff;
-  color: #5a189a;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-elevated);
+  color: var(--brand-primary);
   font-weight: 600;
   padding: 8px 14px;
   cursor: pointer;
   box-shadow: none;
+  transition: border-color 0.2s ease, color 0.2s ease;
 }
 
 .call-list-filter-button:hover {
-  border-color: #d8c7ff;
+  border-color: var(--border-strong);
 }
 
 .call-list-header-actions {
@@ -130,7 +131,8 @@
   justify-content: center;
   background-color: transparent;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  color: var(--brand-primary);
+  transition: color 0.2s ease;
 }
 
 .call-list-toggle-button:focus {
@@ -156,7 +158,7 @@
 .call-list-empty {
   padding: 16px;
   text-align: center;
-  color: #756597;
+  color: var(--text-secondary);
 }
 
 .call-list-items {
@@ -172,7 +174,7 @@
   width: 100%;
   border: none;
   border-radius: 16px;
-  background-color: #ffffff;
+  background-color: var(--surface-elevated);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -183,11 +185,11 @@
 }
 
 .call-item:hover {
-  background-color: #f7f3ff;
+  background-color: var(--surface-hover);
 }
 
 .call-item.selected {
-  background-color: #f1ecff;
+  background-color: var(--surface-selected);
   box-shadow: 0 12px 28px rgba(60, 15, 115, 0.18);
 }
 
@@ -199,12 +201,12 @@
 
 .call-item-name {
   font-weight: 700;
-  color: #2d1f47;
+  color: var(--text-primary);
 }
 
 .call-item-time {
   font-size: 12px;
-  color: #9183aa;
+  color: var(--text-tertiary);
 }
 
 .call-item-subheading {
@@ -215,29 +217,29 @@
 
 .call-item-number {
   font-size: 12px;
-  color: #9183aa;
+  color: var(--text-tertiary);
 }
 
 .call-item-star {
   font-size: 12px;
-  color: #c4b5fd;
+  color: var(--brand-accent);
   font-weight: 700;
 }
 
 .call-item-star.starred {
-  color: #7c3aed;
+  color: var(--brand-primary);
 }
 
 .call-item-status {
   margin: 0;
   font-size: 13px;
-  color: #665983;
+  color: var(--text-tertiary);
 }
 
 .call-item-preview {
   margin: 0;
   font-size: 13px;
-  color: #665983;
+  color: var(--text-tertiary);
   line-height: 1.4;
 }
 
@@ -246,6 +248,7 @@
   font-size: 14px;
   font-weight: 500;
   line-height: 1.4;
+  color: var(--text-secondary);
 }
 
 .call-item-metadata {
@@ -253,11 +256,13 @@
   align-items: center;
   gap: 4px;
   font-size: 12px;
+  color: var(--text-tertiary);
 }
 
 .call-item-category,
 .call-item-elapsed {
   font-weight: 500;
+  color: var(--text-tertiary);
 }
 
 .call-item-separator {
@@ -271,24 +276,25 @@
 
 .call-list-load-more {
   border-radius: 12px;
-  border: 1px solid #e6defb;
-  background-color: #ffffff;
-  color: #5a189a;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-elevated);
+  color: var(--brand-primary);
   font-weight: 600;
   padding: 10px 18px;
   cursor: pointer;
   box-shadow: none;
+  transition: border-color 0.2s ease, color 0.2s ease;
 }
 
 .call-list-load-more:hover {
-  border-color: #d8c7ff;
+  border-color: var(--border-strong);
 }
 
 .call-details {
   border-radius: 14px;
-  border: 1px solid #ede3ff;
-  background-color: #ffffff;
-  box-shadow: 0 24px 60px rgba(60, 15, 115, 0.15);
+  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-elevated);
+  box-shadow: var(--shadow-elevated);
   padding: 32px;
   display: flex;
   flex-direction: column;
@@ -302,7 +308,7 @@
   justify-content: center;
   gap: 12px;
   min-height: 420px;
-  color: #7c6f92;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
@@ -315,7 +321,7 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  color: #311b63;
+  color: var(--text-primary);
 }
 
 .selected-call-section-list {
@@ -326,15 +332,15 @@
 
 .call-collapsible-section {
   border-radius: 20px;
-  border: 1px solid #efe5ff;
-  background-color: #ffffff;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-elevated);
   box-shadow: 0 12px 28px rgba(60, 15, 115, 0.1);
   padding: 4px 4px 20px;
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .call-collapsible-section.drop-target {
-  border-color: #c4b5fd;
+  border-color: var(--border-strong);
   box-shadow: 0 18px 36px rgba(90, 24, 154, 0.2);
 }
 
@@ -345,9 +351,9 @@
   margin: 4px 16px 12px;
   padding: 10px 16px;
   border-radius: 12px;
-  border: 1px dashed rgba(124, 58, 237, 0.6);
-  background: rgba(124, 58, 237, 0.08);
-  color: #5a189a;
+  border: 1px dashed var(--brand-primary);
+  background: var(--surface-hover);
+  color: var(--brand-primary);
   font-weight: 600;
   font-size: 13px;
   letter-spacing: 0.01em;
@@ -375,7 +381,7 @@
 .call-collapsible-title {
   font-weight: 700;
   font-size: 16px;
-  color: #311b63;
+  color: var(--text-primary);
 }
 
 .call-drag-handle {
@@ -383,7 +389,7 @@
   background: transparent;
   cursor: grab;
   padding: 8px;
-  color: #7d6ea6;
+  color: var(--text-tertiary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -506,8 +512,8 @@
 
 .selected-call-summary-card {
   border-radius: 20px;
-  border: 1px solid #efe5ff;
-  background: linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(124, 58, 237, 0.08));
+  border: 1px solid var(--border-subtle);
+  background: var(--card-gradient-soft);
   padding: 28px;
   display: flex;
   flex-direction: column;
@@ -517,7 +523,7 @@
 .selected-call-summary-card h3 {
   margin: 0;
   font-size: 18px;
-  color: #4a2387;
+  color: var(--text-primary);
 }
 
 .selected-call-summary-card ul {
@@ -534,17 +540,17 @@
   justify-content: space-between;
   gap: 16px;
   font-size: 14px;
-  color: #4a3672;
+  color: var(--text-secondary);
 }
 
 .summary-label {
   font-weight: 600;
-  color: #5e4b8c;
+  color: var(--text-secondary);
 }
 
 .summary-value {
   font-weight: 500;
-  color: #2d1f47;
+  color: var(--text-primary);
   text-align: right;
 }
 
@@ -558,8 +564,8 @@
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  background-color: rgba(124, 58, 237, 0.1);
-  color: #5a189a;
+  background-color: var(--badge-surface);
+  color: var(--brand-primary);
   font-size: 12px;
   font-weight: 600;
   padding: 6px 12px;
@@ -573,13 +579,13 @@
 
 .selected-call-sidebar-card {
   border-radius: 18px;
-  border: 1px solid #efe5ff;
-  background-color: #ffffff;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-elevated);
   padding: 20px 24px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  color: #3f2a70;
+  color: var(--text-secondary);
 }
 
 .selected-call-sidebar-card h4 {
@@ -587,20 +593,20 @@
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #7d6ea6;
+  color: var(--text-tertiary);
 }
 
 .selected-call-sidebar-card p {
   margin: 0;
   font-size: 15px;
   font-weight: 600;
-  color: #2d1f47;
+  color: var(--text-primary);
 }
 
 .selected-call-recording {
   border-radius: 18px;
-  border: 1px solid #efe5ff;
-  background-color: #faf7ff;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-muted);
   padding: 18px 20px;
   display: flex;
   flex-direction: column;
@@ -610,7 +616,7 @@
 .selected-call-recording h4 {
   margin: 0;
   font-size: 14px;
-  color: #5a4a7a;
+  color: var(--text-secondary);
   font-weight: 700;
 }
 
@@ -620,8 +626,8 @@
 
 .selected-call-transcript {
   border-radius: 20px;
-  border: 1px solid #f0e6ff;
-  background-color: #fbf8ff;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-elevated);
   padding: 26px 30px;
   display: flex;
   flex-direction: column;
@@ -631,13 +637,13 @@
 .selected-call-transcript h3 {
   margin: 0;
   font-size: 18px;
-  color: #4a2387;
+  color: var(--text-primary);
 }
 
 .selected-call-transcript-empty {
   padding: 32px;
   text-align: center;
-  color: #8c7aa6;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
@@ -658,14 +664,14 @@
 }
 
 .message.agent .message-content {
-  background: linear-gradient(135deg, #6d28d9, #9333ea);
-  color: #ffffff;
+  background: var(--brand-gradient);
+  color: var(--text-inverse);
 }
 
 .message.caller .message-content {
-  background-color: #ffffff;
-  color: #2d1f47;
-  border: 1px solid rgba(124, 58, 237, 0.2);
+  background-color: var(--surface-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
 }
 
 .message-content {
@@ -686,13 +692,13 @@
 
 .message-time {
   font-size: 12px;
-  color: #9183aa;
+  color: var(--text-tertiary);
 }
 
 .selected-call-transcript-text {
   border-radius: 18px;
-  border: 1px solid #efe5ff;
-  background-color: #ffffff;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-elevated);
   padding: 24px 26px;
   display: flex;
   flex-direction: column;
@@ -702,12 +708,12 @@
 .selected-call-transcript-text h3 {
   margin: 0;
   font-size: 18px;
-  color: #4a2387;
+  color: var(--text-primary);
 }
 
 .selected-call-transcript-text p {
   margin: 0;
-  color: #5a4a7a;
+  color: var(--text-secondary);
   line-height: 1.6;
 }
 

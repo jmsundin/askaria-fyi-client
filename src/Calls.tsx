@@ -436,7 +436,6 @@ export default function Calls() {
                   <TbLayoutSidebarRightCollapseFilled
                     size={20}
                     aria-hidden="true"
-                    color="#5a189a"
                   />
                 </button>
               </div>
@@ -462,7 +461,6 @@ export default function Calls() {
                       <TbLayoutSidebarLeftCollapseFilled
                         size={20}
                         aria-hidden="true"
-                        color="#5a189a"
                       />
                     </button>
                   </div>
@@ -502,41 +500,24 @@ export default function Calls() {
                                 {isUrgent ? "🔴 " : ""}
                                 {callerDisplayName}
                               </span>
-                              <time
-                                className="call-item-time"
-                                style={{ color: "#665983" }}
-                              >
+                              <time className="call-item-time">
                                 {formatAbsoluteTimestamp(call.startedAt)}
                               </time>
                             </div>
                             {callReason ? (
-                              <p
-                                className="call-item-reason"
-                                style={{ color: "#2d1f47" }}
-                              >
-                                {callReason}
-                              </p>
+                              <p className="call-item-reason">{callReason}</p>
                             ) : null}
                             <div className="call-item-metadata">
-                              <span
-                                className="call-item-category"
-                                style={{ color: "#665983" }}
-                              >
+                              <span className="call-item-category">
                                 {customerCategory}
                               </span>
                               {relativeLabel ? (
                                 <>
-                                  <span
-                                    className="call-item-separator"
-                                    style={{ color: "#665983" }}
-                                  >
+                                  <span className="call-item-separator">
                                     {" "}
                                     •{" "}
                                   </span>
-                                  <span
-                                    className="call-item-elapsed"
-                                    style={{ color: "#665983" }}
-                                  >
+                                  <span className="call-item-elapsed">
                                     {relativeLabel}
                                   </span>
                                 </>

@@ -145,11 +145,9 @@ export default function Integrations() {
       style={{
         display: "flex",
         minHeight: "100vh",
-        background:
-          "linear-gradient(135deg, #f6f7fb 0%, #ffffff 55%, #f4efff 100%)",
-        color: "#291c47",
-        fontFamily:
-          "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        background: "var(--app-background-gradient)",
+        color: "var(--text-primary)",
+        fontFamily: "inherit",
       }}
     >
       <Sidebar activeItem="integrations" businessLabel={sidebarBusinessLabel} />
@@ -189,14 +187,20 @@ export default function Integrations() {
             >
               Integrations
             </span>
-            <h1 style={{ margin: 0, fontSize: "34px", color: "#32135c" }}>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: "34px",
+                color: "var(--text-heading)",
+              }}
+            >
               Connect your tools
             </h1>
             <p
               style={{
                 margin: 0,
                 fontSize: "16px",
-                color: "#7b6f91",
+                color: "var(--text-secondary)",
                 maxWidth: "540px",
               }}
             >
@@ -209,7 +213,7 @@ export default function Integrations() {
             onClick={handleLogout}
             style={{
               fontWeight: 600,
-              color: "#5a189a",
+              color: "var(--brand-primary)",
               textDecoration: "none",
               marginTop: "6px",
             }}
@@ -231,7 +235,7 @@ export default function Integrations() {
             <h2 style={{ margin: 0, fontSize: "20px", color: "#32135c" }}>
               Available integrations
             </h2>
-            <p style={{ margin: 0, color: "#75659a" }}>
+            <p style={{ margin: 0, color: "var(--text-secondary)" }}>
               Choose a category to connect new services.
             </p>
           </header>
@@ -248,9 +252,9 @@ export default function Integrations() {
                   key={category}
                   style={{
                     borderRadius: "26px",
-                    border: "1px solid #efe5ff",
-                    backgroundColor: "#ffffff",
-                    boxShadow: "0 26px 60px rgba(48, 18, 84, 0.12)",
+                    border: "1px solid var(--border-subtle)",
+                    backgroundColor: "var(--surface-elevated)",
+                    boxShadow: "var(--shadow-card-subtle)",
                     padding: "24px",
                     display: "flex",
                     flexDirection: "column",
@@ -274,14 +278,19 @@ export default function Integrations() {
                       <span
                         style={{
                           fontSize: "12px",
-                          color: "#7c6f92",
+                          color: "var(--text-tertiary)",
                           textTransform: "uppercase",
                           fontWeight: 600,
                         }}
                       >
                         {formatCategoryLabel(category as IntegrationCategory)}
                       </span>
-                      <strong style={{ color: "#311b63", fontSize: "16px" }}>
+                      <strong
+                        style={{
+                          color: "var(--text-heading)",
+                          fontSize: "16px",
+                        }}
+                      >
                         {integrations.length} options
                       </strong>
                     </div>
@@ -291,9 +300,8 @@ export default function Integrations() {
                         width: "42px",
                         height: "42px",
                         borderRadius: "14px",
-                        background:
-                          "linear-gradient(135deg, rgba(124,58,237,0.18), rgba(236,72,153,0.18))",
-                        color: "#3c0f73",
+                        background: "var(--card-gradient-strong)",
+                        color: "var(--text-inverse)",
                         fontWeight: 700,
                         display: "inline-flex",
                         alignItems: "center",
@@ -315,8 +323,8 @@ export default function Integrations() {
                         key={integration.id}
                         style={{
                           borderRadius: "20px",
-                          border: "1px solid #f2eafd",
-                          backgroundColor: "#faf8ff",
+                          border: "1px solid var(--border-subtle)",
+                          backgroundColor: "var(--surface-muted)",
                           padding: "18px",
                           display: "flex",
                           flexDirection: "column",
@@ -336,8 +344,8 @@ export default function Integrations() {
                               width: "32px",
                               height: "32px",
                               borderRadius: "10px",
-                              backgroundColor: "rgba(60, 15, 115, 0.12)",
-                              color: "#3c0f73",
+                              backgroundColor: "var(--surface-highlight)",
+                              color: "var(--brand-primary-strong)",
                               display: "inline-flex",
                               alignItems: "center",
                               justifyContent: "center",
@@ -354,11 +362,14 @@ export default function Integrations() {
                               gap: "2px",
                             }}
                           >
-                            <strong style={{ color: "#311b63" }}>
+                            <strong style={{ color: "var(--text-heading)" }}>
                               {integration.name}
                             </strong>
                             <span
-                              style={{ fontSize: "13px", color: "#6a5a8d" }}
+                              style={{
+                                fontSize: "13px",
+                                color: "var(--text-secondary)",
+                              }}
                             >
                               {integration.description}
                             </span>
@@ -369,9 +380,9 @@ export default function Integrations() {
                           style={{
                             alignSelf: "flex-start",
                             borderRadius: "10px",
-                            border: "1px solid #d6c4ff",
-                            backgroundColor: "#ffffff",
-                            color: "#5a189a",
+                            border: "1px solid var(--border-subtle)",
+                            backgroundColor: "var(--surface-elevated)",
+                            color: "var(--brand-primary)",
                             fontWeight: 600,
                             padding: "8px 18px",
                             cursor: "pointer",
@@ -406,10 +417,16 @@ export default function Integrations() {
             <div
               style={{ display: "flex", flexDirection: "column", gap: "6px" }}
             >
-              <h2 style={{ margin: 0, fontSize: "20px", color: "#32135c" }}>
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: "20px",
+                  color: "var(--text-heading)",
+                }}
+              >
                 Connected services
               </h2>
-              <p style={{ margin: 0, color: "#75659a" }}>
+              <p style={{ margin: 0, color: "var(--text-secondary)" }}>
                 Manage sync health and usage for active integrations.
               </p>
             </div>
@@ -418,11 +435,11 @@ export default function Integrations() {
               style={{
                 borderRadius: "999px",
                 border: "none",
-                background: "linear-gradient(90deg, #7c3aed, #ec4899)",
-                color: "#ffffff",
+                background: "var(--brand-gradient)",
+                color: "var(--text-inverse)",
                 fontWeight: 600,
                 padding: "12px 26px",
-                boxShadow: "0 18px 40px rgba(124, 58, 237, 0.32)",
+                boxShadow: "var(--shadow-elevated-strong)",
                 cursor: "pointer",
               }}
             >
@@ -432,9 +449,9 @@ export default function Integrations() {
           <div
             style={{
               borderRadius: "26px",
-              border: "1px solid #efe5ff",
-              backgroundColor: "#ffffff",
-              boxShadow: "0 28px 60px rgba(48, 18, 84, 0.12)",
+              border: "1px solid var(--border-subtle)",
+              backgroundColor: "var(--surface-elevated)",
+              boxShadow: "var(--shadow-card-subtle)",
               overflow: "hidden",
               display: "grid",
               gridTemplateColumns: "2fr 1fr 1fr",
@@ -445,8 +462,8 @@ export default function Integrations() {
                 display: "grid",
                 gridTemplateColumns: "2fr 1fr 1fr",
                 padding: "18px 28px",
-                backgroundColor: "#f5efff",
-                color: "#3a2562",
+                backgroundColor: "var(--surface-highlight)",
+                color: "var(--text-secondary)",
                 fontWeight: 600,
                 fontSize: "13px",
                 textTransform: "uppercase",
@@ -464,9 +481,12 @@ export default function Integrations() {
                   display: "grid",
                   gridTemplateColumns: "2fr 1fr 1fr",
                   padding: "20px 28px",
-                  backgroundColor: index % 2 === 0 ? "#ffffff" : "#faf7ff",
+                  backgroundColor:
+                    index % 2 === 0
+                      ? "var(--surface-elevated)"
+                      : "var(--surface-muted)",
                   alignItems: "center",
-                  color: "#3d2a66",
+                  color: "var(--text-primary)",
                   fontWeight: 500,
                 }}
               >
@@ -478,14 +498,18 @@ export default function Integrations() {
                   }}
                 >
                   <strong>{integration.name}</strong>
-                  <span style={{ fontSize: "13px", color: "#7c6f92" }}>
+                  <span
+                    style={{ fontSize: "13px", color: "var(--text-secondary)" }}
+                  >
                     {integration.lastSyncedLabel}
                   </span>
                 </div>
-                <span style={{ color: "#16a34a" }}>
+                <span style={{ color: "var(--text-positive)" }}>
                   {integration.statusLabel}
                 </span>
-                <span style={{ fontSize: "13px", color: "#5f4e82" }}>
+                <span
+                  style={{ fontSize: "13px", color: "var(--text-secondary)" }}
+                >
                   {integration.usageSummary}
                 </span>
               </div>

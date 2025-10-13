@@ -48,10 +48,9 @@ const accountPageContainerStyles: CSSProperties = {
   width: "100%",
   display: "flex",
   minHeight: "100vh",
-  background: "linear-gradient(135deg, #f6f7fb 0%, #ffffff 60%, #f6f1ff 100%)",
-  color: "#2d1f47",
-  fontFamily:
-    '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  background: "var(--app-background-gradient)",
+  color: "var(--text-primary)",
+  fontFamily: "inherit",
 };
 
 const accountMainLayoutStyles: CSSProperties = {
@@ -140,7 +139,7 @@ export default function Account() {
             gap: "8px",
             width: "100%",
             margin: "0 auto",
-            color: "#291a47",
+            color: "var(--text-secondary)",
           }}
         >
           <div
@@ -159,8 +158,8 @@ export default function Account() {
                   alignSelf: "flex-start",
                   borderRadius: "999px",
                   padding: "6px 16px",
-                  backgroundColor: "rgba(124, 58, 237, 0.12)",
-                  color: "#5a189a",
+                  backgroundColor: "var(--badge-surface)",
+                  color: "var(--badge-text)",
                   fontSize: "12px",
                   fontWeight: 700,
                   letterSpacing: "0.08em",
@@ -169,14 +168,20 @@ export default function Account() {
               >
                 Account
               </span>
-              <h1 style={{ margin: 0, fontSize: "34px", color: "#32125b" }}>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: "34px",
+                  color: "var(--text-heading)",
+                }}
+              >
                 Account settings
               </h1>
               <p
                 style={{
                   margin: 0,
                   fontSize: "16px",
-                  color: "#7b6f91",
+                  color: "var(--text-secondary)",
                 }}
               >
                 Manage your user account preferences and settings in one place.
@@ -187,7 +192,7 @@ export default function Account() {
               onClick={handleLogout}
               style={{
                 fontWeight: 600,
-                color: "#5a189a",
+                color: "var(--brand-primary)",
                 textDecoration: "none",
                 marginTop: "6px",
               }}
@@ -225,11 +230,15 @@ export default function Account() {
                       cursor: "pointer",
                       borderRadius: "16px",
                       padding: "18px 20px",
-                      backgroundColor: isActive ? "#3c0f73" : "#ffffff",
-                      color: isActive ? "#ffffff" : "#453762",
+                      backgroundColor: isActive
+                        ? "var(--brand-primary-strong)"
+                        : "var(--surface-elevated)",
+                      color: isActive
+                        ? "var(--text-inverse)"
+                        : "var(--text-secondary)",
                       boxShadow: isActive
-                        ? "0 16px 32px rgba(60, 15, 115, 0.32)"
-                        : "0 4px 12px rgba(48, 18, 84, 0.08)",
+                        ? "var(--shadow-elevated-strong)"
+                        : "var(--shadow-card-subtle)",
                       display: "flex",
                       flexDirection: "column",
                       gap: "8px",
@@ -243,7 +252,9 @@ export default function Account() {
                     <span
                       style={{
                         fontSize: "13px",
-                        color: isActive ? "rgba(255,255,255,0.82)" : "#75659c",
+                        color: isActive
+                          ? "rgba(255, 255, 255, 0.85)"
+                          : "var(--text-secondary)",
                         lineHeight: 1.45,
                       }}
                     >
@@ -393,15 +404,21 @@ function AccountSettingsTab({
     <article
       style={{
         borderRadius: "28px",
-        border: "1px solid #efe3ff",
-        backgroundColor: "#ffffff",
-        boxShadow: "0 30px 70px rgba(45, 18, 84, 0.12)",
+        border: "1px solid var(--border-subtle)",
+        backgroundColor: "var(--surface-elevated)",
+        boxShadow: "var(--shadow-card-subtle)",
         padding: "36px 40px",
         display: "grid",
         gap: "20px",
       }}
     >
-      <h2 style={{ margin: 0, fontSize: "20px", color: "#311a5f" }}>
+      <h2
+        style={{
+          margin: 0,
+          fontSize: "20px",
+          color: "var(--text-heading)",
+        }}
+      >
         Account controls
       </h2>
       <div
@@ -430,14 +447,13 @@ function AccountSettingsTab({
             key={card.title}
             style={{
               borderRadius: "22px",
-              border: "1px solid #f2eafd",
-              background:
-                "linear-gradient(180deg, rgba(124, 58, 237, 0.08) 0%, rgba(236, 72, 153, 0.12) 100%)",
+              border: "1px solid var(--border-subtle)",
+              background: "var(--card-gradient-soft)",
               padding: "24px",
               display: "flex",
               flexDirection: "column",
               gap: "16px",
-              color: "#3b2b65",
+              color: "var(--text-secondary)",
             }}
           >
             <div
@@ -453,12 +469,12 @@ function AccountSettingsTab({
                   width: "40px",
                   height: "40px",
                   borderRadius: "12px",
-                  backgroundColor: "rgba(60, 15, 115, 0.12)",
+                  backgroundColor: "var(--surface-highlight)",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontWeight: 700,
-                  color: "#3c0f73",
+                  color: "var(--brand-primary-strong)",
                 }}
               >
                 {card.accentIconLabel}
@@ -470,13 +486,15 @@ function AccountSettingsTab({
                 margin: 0,
                 fontSize: "14px",
                 lineHeight: 1.5,
-                color: "#5f4e82",
+                color: "var(--text-secondary)",
               }}
             >
               {card.description}
             </p>
             {card.secondaryContent ? (
-              <span style={{ fontSize: "13px", color: "#7c6d98" }}>
+              <span
+                style={{ fontSize: "13px", color: "var(--text-secondary)" }}
+              >
                 {card.secondaryContent}
               </span>
             ) : null}
@@ -486,11 +504,11 @@ function AccountSettingsTab({
                 alignSelf: "flex-start",
                 borderRadius: "999px",
                 border: "none",
-                background: "linear-gradient(90deg, #7c3aed, #ec4899)",
-                color: "#ffffff",
+                background: "var(--brand-gradient)",
+                color: "var(--text-inverse)",
                 fontWeight: 600,
                 padding: "10px 22px",
-                boxShadow: "0 18px 32px rgba(124, 58, 237, 0.32)",
+                boxShadow: "var(--shadow-elevated-strong)",
                 cursor: "pointer",
               }}
               onClick={card.onPrimaryAction}
@@ -556,14 +574,13 @@ function AccountInfoCard({
       noValidate
       style={{
         borderRadius: "22px",
-        border: "1px solid #f2eafd",
-        background:
-          "linear-gradient(180deg, rgba(124, 58, 237, 0.08) 0%, rgba(236, 72, 153, 0.12) 100%)",
+        border: "1px solid var(--border-subtle)",
+        background: "var(--card-gradient-soft)",
         padding: "24px",
         display: "flex",
         flexDirection: "column",
         gap: "16px",
-        color: "#3b2b65",
+        color: "var(--text-secondary)",
       }}
     >
       <div
@@ -587,17 +604,25 @@ function AccountInfoCard({
               width: "40px",
               height: "40px",
               borderRadius: "12px",
-              backgroundColor: "rgba(60, 15, 115, 0.12)",
+              backgroundColor: "var(--surface-highlight)",
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
               fontWeight: 700,
-              color: "#3c0f73",
+              color: "var(--brand-primary-strong)",
             }}
           >
             {accentIconLabel}
           </span>
-          <h3 style={{ margin: 0, fontSize: "17px" }}>Account Info</h3>
+          <h3
+            style={{
+              margin: 0,
+              fontSize: "17px",
+              color: "var(--text-heading)",
+            }}
+          >
+            Account Info
+          </h3>
         </div>
         {!isEditing ? (
           <button
@@ -606,11 +631,11 @@ function AccountInfoCard({
             style={{
               borderRadius: "999px",
               border: "none",
-              background: "linear-gradient(90deg, #7c3aed, #ec4899)",
-              color: "#ffffff",
+              background: "var(--brand-gradient)",
+              color: "var(--text-inverse)",
               fontWeight: 600,
               padding: "10px 22px",
-              boxShadow: "0 18px 32px rgba(124, 58, 237, 0.32)",
+              boxShadow: "var(--shadow-elevated-strong)",
               cursor: "pointer",
             }}
           >
@@ -624,7 +649,7 @@ function AccountInfoCard({
           flexDirection: "column",
           gap: "8px",
           fontSize: "13px",
-          color: "#7c6d98",
+          color: "var(--text-secondary)",
         }}
       >
         <span>Primary email</span>
@@ -636,14 +661,14 @@ function AccountInfoCard({
           spellCheck={false}
           style={{
             borderRadius: "14px",
-            border: "1px solid rgba(124, 58, 237, 0.32)",
-            backgroundColor: "rgba(255, 255, 255, 0.88)",
+            border: "1px solid var(--border-subtle)",
+            backgroundColor: "var(--surface-elevated)",
             padding: "12px 16px",
             fontSize: "15px",
-            color: "#331b63",
+            color: "var(--text-primary)",
             outline: "none",
             boxShadow: isEditing
-              ? "0 0 0 3px rgba(124, 58, 237, 0.16)"
+              ? "0 0 0 3px var(--surface-highlight)"
               : "none",
             transition: "box-shadow 0.2s ease, border-color 0.2s ease",
             cursor: isEditing ? "text" : "default",
@@ -661,7 +686,7 @@ function AccountInfoCard({
           flexDirection: "column",
           gap: "8px",
           fontSize: "13px",
-          color: "#7c6d98",
+          color: "var(--text-secondary)",
         }}
       >
         <span>Business phone number</span>
@@ -673,14 +698,14 @@ function AccountInfoCard({
           spellCheck={false}
           style={{
             borderRadius: "14px",
-            border: "1px solid rgba(124, 58, 237, 0.32)",
-            backgroundColor: "rgba(255, 255, 255, 0.88)",
+            border: "1px solid var(--border-subtle)",
+            backgroundColor: "var(--surface-elevated)",
             padding: "12px 16px",
             fontSize: "15px",
-            color: "#331b63",
+            color: "var(--text-primary)",
             outline: "none",
             boxShadow: isEditing
-              ? "0 0 0 3px rgba(124, 58, 237, 0.16)"
+              ? "0 0 0 3px var(--surface-highlight)"
               : "none",
             transition: "box-shadow 0.2s ease, border-color 0.2s ease",
             cursor: isEditing ? "text" : "default",
@@ -700,9 +725,9 @@ function AccountInfoCard({
             onClick={onCancel}
             style={{
               borderRadius: "999px",
-              border: "1px solid rgba(124, 58, 237, 0.34)",
-              backgroundColor: "rgba(255, 255, 255, 0.92)",
-              color: "#5a189a",
+              border: "1px solid var(--border-subtle)",
+              backgroundColor: "var(--surface-elevated)",
+              color: "var(--brand-primary)",
               fontWeight: 600,
               padding: "10px 22px",
               cursor: "pointer",
@@ -717,14 +742,14 @@ function AccountInfoCard({
               borderRadius: "999px",
               border: "none",
               background: isSaveDisabled
-                ? "linear-gradient(90deg, rgba(124, 58, 237, 0.42), rgba(236, 72, 153, 0.42))"
-                : "linear-gradient(90deg, #7c3aed, #ec4899)",
-              color: "#ffffff",
+                ? "linear-gradient(120deg, rgba(124, 58, 237, 0.42), rgba(236, 72, 153, 0.42))"
+                : "var(--brand-gradient)",
+              color: "var(--text-inverse)",
               fontWeight: 600,
               padding: "10px 22px",
               boxShadow: isSaveDisabled
                 ? "none"
-                : "0 18px 32px rgba(124, 58, 237, 0.32)",
+                : "var(--shadow-elevated-strong)",
               cursor: isSaveDisabled ? "not-allowed" : "pointer",
               opacity: isSaveDisabled ? 0.7 : 1,
             }}

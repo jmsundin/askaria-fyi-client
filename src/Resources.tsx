@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import ThemeToggle from "./components/ThemeToggle";
+import "./Resources.css";
 
 type ResourceArticle = {
   id: string;
@@ -95,199 +97,51 @@ const resourceArticles: ResourceArticle[] = [
 
 export default function Resources() {
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        backgroundColor: "#faf7ff",
-        color: "#34145a",
-        fontFamily:
-          "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      }}
-    >
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "26px 64px",
-          background:
-            "linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(236, 72, 153, 0.08))",
-        }}
-      >
-        <Link
-          to="/"
-          style={{
-            textDecoration: "none",
-            color: "#34145a",
-            fontWeight: 700,
-            fontSize: "20px",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "16px",
-          }}
-        >
-          <span>AskAria</span>
+    <main className="resources-page">
+      <header className="resources-header">
+        <Link to="/" className="resources-brand">
+          AskAria
         </Link>
-        <nav style={{ display: "flex", gap: "20px", fontWeight: 600 }}>
-          <Link to="/resources" style={{ color: "#5a189a" }}>
-            Resources
-          </Link>
-          <Link to="/login" style={{ color: "#5a189a" }}>
-            Login
-          </Link>
-          <Link to="/register" style={{ color: "#5a189a" }}>
-            Register
-          </Link>
-        </nav>
+        <div className="resources-header-actions">
+          <nav className="resources-nav" aria-label="Resources navigation">
+            <Link to="/resources" aria-current="page">
+              Resources
+            </Link>
+            <Link to="/login">Login</Link>
+            <Link to="/register">Register</Link>
+          </nav>
+          <ThemeToggle />
+        </div>
       </header>
 
-      <section
-        style={{
-          padding: "72px 64px 48px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "16px",
-          alignItems: "flex-start",
-          background:
-            "radial-gradient(circle at top left, rgba(124, 58, 237, 0.14), rgba(255, 255, 255, 0.9))",
-        }}
-      >
-        <span
-          style={{
-            fontSize: "14px",
-            fontWeight: 700,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: "#5a189a",
-          }}
-        >
-          Resource Library
-        </span>
-        <h1
-          style={{
-            margin: 0,
-            fontSize: "48px",
-            lineHeight: 1.05,
-            color: "#220a3d",
-          }}
-        >
-          Insights and playbooks for modern answering teams.
-        </h1>
-        <p
-          style={{
-            margin: 0,
-            fontSize: "18px",
-            maxWidth: "620px",
-            lineHeight: 1.6,
-            color: "#5e4a85",
-          }}
-        >
+      <section className="resources-hero">
+        <span>Resource Library</span>
+        <h1>Insights and playbooks for modern answering teams.</h1>
+        <p>
           Level up every customer interaction with tested scripts, automation
           guides, and deep dives on delivering premium service at scale.
         </p>
       </section>
 
-      <section
-        style={{
-          padding: "48px 64px 96px",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-          gap: "32px",
-        }}
-      >
+      <section className="resources-grid">
         {resourceArticles.map((article) => (
-          <article
-            key={article.id}
-            style={{
-              backgroundColor: "#ffffff",
-              borderRadius: "20px",
-              padding: "28px",
-              boxShadow: "0 24px 44px rgba(52, 20, 90, 0.08)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px",
-            }}
-          >
-            <span
-              style={{
-                fontSize: "13px",
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                color: "#7a3dc9",
-                fontWeight: 700,
-              }}
-            >
-              {article.category}
-            </span>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "22px",
-                lineHeight: 1.25,
-                color: "#220a3d",
-              }}
-            >
-              {article.title}
-            </h2>
-            <p
-              style={{
-                margin: 0,
-                fontSize: "16px",
-                lineHeight: 1.55,
-                color: "#5e4a85",
-              }}
-            >
-              {article.description}
-            </p>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginTop: "auto",
-              }}
-            >
-              <span style={{ fontSize: "14px", color: "#7f6aa8" }}>
-                {article.publishDate}
-              </span>
-              <Link
-                to={`/#resources/${article.id}`}
-                style={{
-                  color: "#5a189a",
-                  fontWeight: 600,
-                  textDecoration: "none",
-                }}
-              >
-                Read summary
-              </Link>
+          <article key={article.id} className="resources-card">
+            <span>{article.category}</span>
+            <h2>{article.title}</h2>
+            <p>{article.description}</p>
+            <div>
+              <span>{article.publishDate}</span>
+              <Link to={`/#resources/${article.id}`}>Read summary</Link>
             </div>
           </article>
         ))}
       </section>
 
-      <footer
-        style={{
-          marginTop: "auto",
-          padding: "32px 64px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          backgroundColor: "rgba(255, 255, 255, 0.9)",
-          borderTop: "1px solid rgba(90, 24, 154, 0.08)",
-          fontSize: "13px",
-          color: "#6b5c90",
-        }}
-      >
+      <footer className="resources-footer">
         <span>© {new Date().getFullYear()} Ask Aria. All rights reserved.</span>
-        <div style={{ display: "flex", gap: "18px" }}>
-          <Link to="/login" style={{ color: "#5a189a" }}>
-            Log in
-          </Link>
-          <Link to="/register" style={{ color: "#5a189a" }}>
-            Create account
-          </Link>
+        <div>
+          <Link to="/login">Log in</Link>
+          <Link to="/register">Create account</Link>
         </div>
       </footer>
     </main>

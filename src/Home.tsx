@@ -83,11 +83,9 @@ export default function Home() {
       style={{
         display: "flex",
         minHeight: "100vh",
-        background:
-          "linear-gradient(135deg, #f6f7fb 0%, #ffffff 60%, #f6f1ff 100%)",
-        color: "#2d1f47",
-        fontFamily:
-          "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        background: "var(--app-background-gradient)",
+        color: "var(--text-primary)",
+        fontFamily: "inherit",
       }}
     >
       <Sidebar activeItem="settings" businessLabel={sidebarBusinessLabel} />
@@ -118,14 +116,20 @@ export default function Home() {
             <div
               style={{ display: "flex", flexDirection: "column", gap: "8px" }}
             >
-              <h1 style={{ margin: 0, fontSize: "32px", color: "#301254" }}>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: "32px",
+                  color: "var(--text-heading)",
+                }}
+              >
                 Business Information
               </h1>
               <p
                 style={{
                   margin: 0,
                   fontSize: "16px",
-                  color: "#7c6f92",
+                  color: "var(--text-secondary)",
                   maxWidth: "520px",
                 }}
               >
@@ -139,7 +143,7 @@ export default function Home() {
                 onClick={handleLogout}
                 style={{
                   fontWeight: 600,
-                  color: "#5a189a",
+                  color: "var(--brand-primary)",
                   textDecoration: "none",
                 }}
               >
@@ -150,11 +154,11 @@ export default function Home() {
                 style={{
                   borderRadius: "999px",
                   border: "none",
-                  background: "linear-gradient(90deg, #7c3aed, #ec4899)",
-                  color: "#ffffff",
+                  background: "var(--brand-gradient)",
+                  color: "var(--text-inverse)",
                   fontWeight: 700,
                   padding: "12px 28px",
-                  boxShadow: "0 18px 40px rgba(124, 58, 237, 0.35)",
+                  boxShadow: "var(--shadow-elevated-strong)",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "8px",
@@ -188,13 +192,21 @@ export default function Home() {
                       style={{
                         flex: 1,
                         borderRadius: "14px",
-                        border: `1px solid ${isActive ? "#d8c7ff" : "#e5dfff"}`,
-                        backgroundColor: isActive ? "#f5ecff" : "#ffffff",
+                        border: `1px solid ${
+                          isActive
+                            ? "var(--border-strong)"
+                            : "var(--border-subtle)"
+                        }`,
+                        backgroundColor: isActive
+                          ? "var(--surface-highlight)"
+                          : "var(--surface-elevated)",
                         padding: "14px 18px",
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        color: isActive ? "#4a2387" : "#5a4a7a",
+                        color: isActive
+                          ? "var(--brand-primary-strong)"
+                          : "var(--text-secondary)",
                         fontWeight: 600,
                         textDecoration: "none",
                       }}
@@ -204,8 +216,8 @@ export default function Home() {
                         <span
                           style={{
                             borderRadius: "999px",
-                            backgroundColor: "#fde68a",
-                            color: "#92400e",
+                            backgroundColor: "var(--status-negative-surface)",
+                            color: "var(--text-inverse)",
                             fontSize: "11px",
                             fontWeight: 700,
                             padding: "4px 10px",
@@ -225,9 +237,9 @@ export default function Home() {
           <article
             style={{
               borderRadius: "24px",
-              border: "1px solid #efe5ff",
-              backgroundColor: "#ffffff",
-              boxShadow: "0 24px 60px rgba(48, 18, 84, 0.12)",
+              border: "1px solid var(--border-subtle)",
+              backgroundColor: "var(--surface-elevated)",
+              boxShadow: "var(--shadow-card-subtle)",
               padding: "32px 36px",
               display: "flex",
               flexDirection: "column",
@@ -243,12 +255,11 @@ export default function Home() {
                   width: "44px",
                   height: "44px",
                   borderRadius: "12px",
-                  background:
-                    "linear-gradient(135deg, rgba(124, 58, 237, 0.18), rgba(236, 72, 153, 0.18))",
+                  background: "var(--card-gradient-strong)",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "#7c3aed",
+                  color: "var(--text-inverse)",
                   fontWeight: 700,
                 }}
               >
@@ -257,10 +268,22 @@ export default function Home() {
               <div
                 style={{ display: "flex", flexDirection: "column", gap: "4px" }}
               >
-                <h2 style={{ margin: 0, fontSize: "22px", color: "#311b63" }}>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: "22px",
+                    color: "var(--text-heading)",
+                  }}
+                >
                   Training Sources
                 </h2>
-                <p style={{ margin: 0, color: "#8b7aa6", fontSize: "14px" }}>
+                <p
+                  style={{
+                    margin: 0,
+                    color: "var(--text-secondary)",
+                    fontSize: "14px",
+                  }}
+                >
                   These sources help Aria understand your business before
                   answering calls.
                 </p>
@@ -271,7 +294,7 @@ export default function Home() {
                 display: "flex",
                 flexDirection: "column",
                 borderRadius: "18px",
-                border: "1px solid #f2eafd",
+                border: "1px solid var(--border-subtle)",
                 overflow: "hidden",
               }}
             >
@@ -283,13 +306,20 @@ export default function Home() {
                     gridTemplateColumns: "220px 1fr",
                     gap: "24px",
                     padding: "20px 24px",
-                    backgroundColor: index % 2 === 0 ? "#ffffff" : "#fbf8ff",
+                    backgroundColor:
+                      index % 2 === 0
+                        ? "var(--surface-elevated)"
+                        : "var(--surface-muted)",
                   }}
                 >
-                  <span style={{ fontWeight: 600, color: "#5a4a7a" }}>
+                  <span
+                    style={{ fontWeight: 600, color: "var(--text-secondary)" }}
+                  >
                     {source.label}
                   </span>
-                  <span style={{ color: "#2d1f47", fontWeight: 600 }}>
+                  <span
+                    style={{ color: "var(--text-primary)", fontWeight: 600 }}
+                  >
                     {source.value}
                   </span>
                 </div>
@@ -300,9 +330,9 @@ export default function Home() {
                 type="button"
                 style={{
                   borderRadius: "12px",
-                  border: "1px solid #d8c7ff",
-                  backgroundColor: "#ffffff",
-                  color: "#5a189a",
+                  border: "1px solid var(--border-subtle)",
+                  backgroundColor: "var(--surface-elevated)",
+                  color: "var(--brand-primary)",
                   fontWeight: 600,
                   padding: "10px 22px",
                   cursor: "pointer",
@@ -316,9 +346,9 @@ export default function Home() {
           <article
             style={{
               borderRadius: "24px",
-              border: "1px solid #efe5ff",
-              backgroundColor: "#ffffff",
-              boxShadow: "0 24px 60px rgba(48, 18, 84, 0.12)",
+              border: "1px solid var(--border-subtle)",
+              backgroundColor: "var(--surface-elevated)",
+              boxShadow: "var(--shadow-card-subtle)",
               padding: "32px 36px",
               display: "flex",
               flexDirection: "column",
@@ -334,12 +364,11 @@ export default function Home() {
                   width: "44px",
                   height: "44px",
                   borderRadius: "12px",
-                  background:
-                    "linear-gradient(135deg, rgba(124, 58, 237, 0.18), rgba(236, 72, 153, 0.18))",
+                  background: "var(--card-gradient-strong)",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "#7c3aed",
+                  color: "var(--text-inverse)",
                   fontWeight: 700,
                 }}
               >
@@ -348,10 +377,22 @@ export default function Home() {
               <div
                 style={{ display: "flex", flexDirection: "column", gap: "4px" }}
               >
-                <h2 style={{ margin: 0, fontSize: "22px", color: "#311b63" }}>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: "22px",
+                    color: "var(--text-heading)",
+                  }}
+                >
                   Business Details
                 </h2>
-                <p style={{ margin: 0, color: "#8b7aa6", fontSize: "14px" }}>
+                <p
+                  style={{
+                    margin: 0,
+                    color: "var(--text-secondary)",
+                    fontSize: "14px",
+                  }}
+                >
                   Keep this information current so Aria can represent your
                   company accurately.
                 </p>
@@ -362,7 +403,7 @@ export default function Home() {
                 display: "flex",
                 flexDirection: "column",
                 borderRadius: "18px",
-                border: "1px solid #f2eafd",
+                border: "1px solid var(--border-subtle)",
                 overflow: "hidden",
               }}
             >
@@ -374,10 +415,15 @@ export default function Home() {
                     gridTemplateColumns: "220px 1fr",
                     gap: "24px",
                     padding: "20px 24px",
-                    backgroundColor: index % 2 === 0 ? "#ffffff" : "#fbf8ff",
+                    backgroundColor:
+                      index % 2 === 0
+                        ? "var(--surface-elevated)"
+                        : "var(--surface-muted)",
                   }}
                 >
-                  <span style={{ fontWeight: 600, color: "#5a4a7a" }}>
+                  <span
+                    style={{ fontWeight: 600, color: "var(--text-secondary)" }}
+                  >
                     {detail.label}
                   </span>
                   <div
@@ -385,7 +431,7 @@ export default function Home() {
                       display: "flex",
                       flexDirection: "column",
                       gap: "6px",
-                      color: "#2d1f47",
+                      color: "var(--text-primary)",
                       fontWeight: 500,
                     }}
                   >
@@ -403,9 +449,9 @@ export default function Home() {
                 type="button"
                 style={{
                   borderRadius: "12px",
-                  border: "1px solid #d8c7ff",
-                  backgroundColor: "#ffffff",
-                  color: "#5a189a",
+                  border: "1px solid var(--border-subtle)",
+                  backgroundColor: "var(--surface-elevated)",
+                  color: "var(--brand-primary)",
                   fontWeight: 600,
                   padding: "10px 22px",
                   cursor: "pointer",

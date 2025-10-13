@@ -14,6 +14,7 @@ import Calls from "./Calls.tsx";
 import Account from "./Account";
 import Integrations from "./Integrations";
 import { getToken } from "./auth";
+import ThemeProvider from "./components/ThemeProvider";
 import Resources from "./Resources";
 
 export function RedirectIfAuthenticated() {
@@ -34,48 +35,50 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <BrowserRouter>
-      <Routes>
-        {/* Public landing pages */}
-        <Route path="/" element={<App />} />
-        <Route
-          path="/login"
-          element={
-            <>
-              <RedirectIfAuthenticated />
-              <Login />
-            </>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <>
-              <RedirectIfAuthenticated />
-              <Register />
-            </>
-          }
-        />
-        <Route path="/resources" element={<Resources />} />
-
-        {/* Protected app area */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/app/quick-start" element={<QuickStart />} />
-          <Route path="/app/quick-start/test" element={<QuickStartTest />} />
+    <ThemeProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public landing pages */}
+          <Route path="/" element={<App />} />
           <Route
-            path="/app/quick-start/launch"
-            element={<QuickStartLaunch />}
+            path="/login"
+            element={
+              <>
+                <RedirectIfAuthenticated />
+                <Login />
+              </>
+            }
           />
-          <Route path="/app" element={<Calls />} />
-          <Route path="/app/calls" element={<Calls />} />
-          <Route path="/app/settings" element={<Home />} />
-          <Route path="/app/account" element={<Account />} />
-          <Route path="/app/integrations" element={<Integrations />} />
-        </Route>
+          <Route
+            path="/register"
+            element={
+              <>
+                <RedirectIfAuthenticated />
+                <Register />
+              </>
+            }
+          />
+          <Route path="/resources" element={<Resources />} />
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+          {/* Protected app area */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/app/quick-start" element={<QuickStart />} />
+            <Route path="/app/quick-start/test" element={<QuickStartTest />} />
+            <Route
+              path="/app/quick-start/launch"
+              element={<QuickStartLaunch />}
+            />
+            <Route path="/app" element={<Calls />} />
+            <Route path="/app/calls" element={<Calls />} />
+            <Route path="/app/settings" element={<Home />} />
+            <Route path="/app/account" element={<Account />} />
+            <Route path="/app/integrations" element={<Integrations />} />
+          </Route>
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   </StrictMode>
 );

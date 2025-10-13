@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import ThemeToggle from "./ThemeToggle";
+import "./Sidebar.css";
 
 type SidebarItemKey =
   | "quick-start"
@@ -49,66 +51,22 @@ const sidebarNavigationItems: SidebarNavigationItem[] = [
 
 export default function Sidebar({ activeItem, businessLabel }: SidebarProps) {
   return (
-    <aside
-      style={{
-        width: "280px",
-        backgroundColor: "#ffffff",
-        borderRight: "1px solid #ece3ff",
-        padding: "32px 28px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "28px",
-        position: "sticky",
-        top: 0,
-        alignSelf: "flex-start",
-        height: "100vh",
-        overflowY: "auto",
-      }}
-    >
+    <aside className="sidebar">
       <div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "8px",
-            gap: "16px",
-          }}
-        >
-          <Link to="/" style={{ display: "inline-flex" }}>
-            <span>AskAria</span>
+        <div className="sidebar-header">
+          <Link to="/" className="sidebar-brand">
+            AskAria
           </Link>
-          <span style={{ fontSize: "14px", color: "#7c6f92" }}>
-            {businessLabel}
-          </span>
+          <ThemeToggle />
         </div>
+        <span className="sidebar-business-label">{businessLabel}</span>
         <nav aria-label="Sidebar navigation">
-          <ul
-            style={{
-              listStyle: "none",
-              margin: 0,
-              padding: 0,
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px",
-            }}
-          >
+          <ul className="sidebar-list">
             {sidebarNavigationItems.map((navigationItem) => {
               const isActive = navigationItem.key === activeItem;
-              const commonStyles = {
-                display: "flex",
-                alignItems: "center",
-                padding: "12px 16px",
-                borderRadius: "12px",
-                textDecoration: "none",
-                color: isActive ? "#ffffff" : "#4a3d64",
-                fontWeight: 600,
-                backgroundColor: isActive ? "#3c0f73" : "transparent",
-                boxShadow: isActive
-                  ? "0 10px 20px rgba(60, 15, 115, 0.25)"
-                  : "none",
-                transition: "background-color 0.2s ease, color 0.2s ease",
-              } as const;
+              const className = isActive
+                ? "sidebar-link active"
+                : "sidebar-link";
 
               if (navigationItem.path) {
                 return (
@@ -116,7 +74,7 @@ export default function Sidebar({ activeItem, businessLabel }: SidebarProps) {
                     <Link
                       to={navigationItem.path}
                       aria-current={isActive ? "page" : undefined}
-                      style={commonStyles}
+                      className={className}
                     >
                       {navigationItem.label}
                     </Link>
@@ -126,13 +84,7 @@ export default function Sidebar({ activeItem, businessLabel }: SidebarProps) {
 
               return (
                 <li key={navigationItem.key}>
-                  <span
-                    style={{
-                      ...commonStyles,
-                      cursor: "not-allowed",
-                      opacity: isActive ? 1 : 0.6,
-                    }}
-                  >
+                  <span className={`${className} disabled`}>
                     {navigationItem.label}
                   </span>
                 </li>

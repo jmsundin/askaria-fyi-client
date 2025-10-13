@@ -50,10 +50,9 @@ const quickStartPageContainerStyles: CSSProperties = {
   width: "100%",
   display: "flex",
   minHeight: "100vh",
-  background: "linear-gradient(135deg, #f6f7fb 0%, #ffffff 60%, #f6f1ff 100%)",
-  color: "#2d1f47",
-  fontFamily:
-    '"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  background: "var(--app-background-gradient)",
+  color: "var(--text-primary)",
+  fontFamily: "inherit",
 };
 
 const quickStartMainLayoutStyles: CSSProperties = {
@@ -256,7 +255,13 @@ const CUSTOMIZE_ONBOARDING_STEPS = [
 const BUSINESS_OVERVIEW_CHARACTER_LIMIT = 500;
 const TOTAL_FORM_STEPS = 4;
 const MAX_RENDERED_FORM_STEP = 4;
-const FORM_FIELD_BACKGROUND_COLOR = "#f9f6ff";
+const FORM_FIELD_BACKGROUND_COLOR = "var(--surface-highlight)";
+const FORM_FIELD_BORDER_COLOR = "var(--border-strong)";
+const FORM_FIELD_ERROR_BORDER_COLOR = "var(--text-negative)";
+const FORM_FIELD_LABEL_COLOR = "var(--text-secondary)";
+const FORM_FIELD_ICON_BACKGROUND = "var(--surface-overlay)";
+const FORM_FIELD_ICON_COLOR = "var(--brand-primary-strong)";
+const FORM_FIELD_ERROR_GLOW = "0 0 0 3px rgba(250, 113, 113, 0.18)";
 const CORE_SERVICES_AUTOSAVE_DEBOUNCE_MS = 1600;
 const FAQ_AUTOSAVE_DEBOUNCE_MS = 1600;
 const GREETING_AUTOSAVE_DEBOUNCE_MS = 1600;
@@ -979,6 +984,7 @@ export default function QuickStart() {
           "Let's start by confirming we have your basic business info right.",
         description:
           "This information helps Aria introduce your business and respond accurately to your callers.",
+        primaryActionLabel: "Next",
       }
     : isCoreServicesStep
     ? {
@@ -986,12 +992,14 @@ export default function QuickStart() {
           "Here are the core services we've got for your business. Does this look right?",
         description:
           "Type in the offerings you want Aria to highlight so callers understand what you do.",
+        primaryActionLabel: "Next",
       }
     : {
         title:
           "Add FAQs about your business so your agent can answer common questions easily.",
         description:
           "Add some common questions to teach your agent about your business. You can add more and update them later.",
+        primaryActionLabel: "Next",
       };
 
   const onboardingProgress = useMemo(() => {
@@ -1064,7 +1072,7 @@ export default function QuickStart() {
             width: "100%",
             display: "flex",
             justifyContent: "flex-end",
-            color: "#301447",
+            color: "var(--text-secondary)",
           }}
         >
           <a
@@ -1072,7 +1080,7 @@ export default function QuickStart() {
             onClick={handleLogout}
             style={{
               fontWeight: 600,
-              color: "#5a189a",
+              color: "var(--brand-primary)",
               textDecoration: "none",
               marginTop: "6px",
             }}
@@ -1102,7 +1110,9 @@ export default function QuickStart() {
                   display: "flex",
                   alignItems: "center",
                   gap: "12px",
-                  color: isStepActive ? "#6c2bd9" : "#6f5b91",
+                  color: isStepActive
+                    ? "var(--brand-primary-strong)"
+                    : "var(--text-secondary)",
                   fontWeight: isStepActive ? 700 : 600,
                   fontSize: "14px",
                   textTransform: "uppercase",
@@ -1119,12 +1129,15 @@ export default function QuickStart() {
                     alignItems: "center",
                     justifyContent: "center",
                     backgroundColor: isStepComplete
-                      ? "#d8c3ff"
+                      ? "var(--surface-highlight)"
                       : isStepActive
-                      ? "#ede6ff"
-                      : "#f1eef8",
-                    color: isStepComplete ? "#5a189a" : "#7d6ba8",
+                      ? "var(--surface-muted)"
+                      : "var(--surface-elevated)",
+                    color: isStepComplete
+                      ? "var(--brand-primary-strong)"
+                      : "var(--text-secondary)",
                     fontWeight: 700,
+                    border: `1px solid ${FORM_FIELD_BORDER_COLOR}`,
                   }}
                 >
                   {isStepComplete ? "✓" : step.id}
@@ -1140,1010 +1153,136 @@ export default function QuickStart() {
             display: "flex",
             flexDirection: "column",
             gap: "16px",
-            alignItems: "center",
-            textAlign: "center",
-            width: "100%",
-            maxWidth: "960px",
-            margin: "0 auto",
+            borderRadius: "24px",
+            border: "1px solid var(--border-subtle)",
+            backgroundColor: "var(--surface-elevated)",
+            boxShadow: "var(--shadow-card-subtle)",
+            padding: "28px 32px",
           }}
         >
-          <h1
+          <header
             style={{
-              margin: 0,
-              fontSize: "32px",
-              color: "#311b63",
-              fontWeight: 700,
-            }}
-          >
-            Customize your agent
-          </h1>
-          <p
-            style={{
-              margin: 0,
-              maxWidth: "660px",
-              color: "#7f6e9b",
-              fontSize: "16px",
-              lineHeight: 1.7,
-            }}
-          >
-            Complete these four steps to get Aria ready for test calls. You can
-            update settings anytime as your business evolves.
-          </p>
-        </section>
-
-        <section
-          style={{
-            borderRadius: "18px",
-            border: "1px solid #ede5f6",
-            backgroundColor: "#ffffff",
-            padding: "24px 28px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            width: "100%",
-            maxWidth: "1080px",
-            margin: "0 auto",
-          }}
-        >
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <span
-              style={{
-                fontSize: "12px",
-                fontWeight: 700,
-                color: "#8b78b0",
-                letterSpacing: "0.08em",
-              }}
-            >
-              YOUR AGENT IS TRAINED ON
-            </span>
-            <span style={{ fontSize: "16px", color: "#4d3b6c" }}>
-              No sources connected yet
-            </span>
-          </div>
-          <button
-            type="button"
-            style={{
-              border: "1px solid #d7c9f4",
-              borderRadius: "999px",
-              padding: "10px 20px",
-              backgroundColor: "#f8f4ff",
-              color: "#5a2bc7",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Edit
-          </button>
-        </section>
-
-        {!isGreetingStep ? (
-          <section
-            style={{
-              borderRadius: "28px",
-              backgroundColor: "#ffffff",
-              boxShadow: "0 28px 60px rgba(48, 18, 84, 0.08)",
-              border: "1px solid #ede3ff",
-              padding: "40px",
               display: "flex",
-              flexDirection: "column",
-              gap: "32px",
-              width: "100%",
-              maxWidth: "1080px",
-              margin: "0 auto",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "16px",
             }}
           >
-            <header
-              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
             >
-              <h2 style={{ margin: 0, fontSize: "24px", color: "#301254" }}>
-                {formStepCopy.title}
-              </h2>
-              <p style={{ margin: 0, color: "#7b6a97", fontSize: "15px" }}>
-                {formStepCopy.description}
-              </p>
-            </header>
-
-            <form
-              onSubmit={handleSubmit}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "28px",
-                maxWidth: "960px",
-                width: "100%",
-                margin: "0 auto",
-              }}
-            >
-              {isFirstFormStep ? (
-                <>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "8px",
-                    }}
-                  >
-                    <label
-                      htmlFor="business-name"
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "10px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "15px",
-                            fontWeight: 600,
-                            color: "#3a245d",
-                          }}
-                        >
-                          Business Name
-                        </span>
-                        <span
-                          aria-hidden="true"
-                          style={{
-                            width: "18px",
-                            height: "18px",
-                            borderRadius: "50%",
-                            backgroundColor: "#f1e8ff",
-                            color: "#6c2bd9",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "12px",
-                            fontWeight: 700,
-                          }}
-                        >
-                          ?
-                        </span>
-                      </span>
-                      <input
-                        id="business-name"
-                        name="businessName"
-                        type="text"
-                        placeholder="Your Business"
-                        value={businessName}
-                        onChange={handleBusinessNameChange}
-                        onBlur={() => setIsBusinessNameTouched(true)}
-                        style={{
-                          borderRadius: "14px",
-                          border: businessNameErrorMessage
-                            ? "1px solid #f05c7e"
-                            : "1px solid #e4dbf7",
-                          padding: "16px 18px",
-                          fontSize: "16px",
-                          color: "#2d1f47",
-                          outline: "none",
-                          boxShadow: businessNameErrorMessage
-                            ? "0 0 0 3px rgba(240, 92, 126, 0.12)"
-                            : "none",
-                          backgroundColor: FORM_FIELD_BACKGROUND_COLOR,
-                        }}
-                      />
-                    </label>
-                    {businessNameErrorMessage ? (
-                      <span
-                        style={{
-                          color: "#d6456d",
-                          fontSize: "13px",
-                          paddingLeft: "4px",
-                        }}
-                      >
-                        {businessNameErrorMessage}
-                      </span>
-                    ) : null}
-                  </div>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "8px",
-                    }}
-                  >
-                    <label
-                      htmlFor="business-phone-number"
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "10px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "15px",
-                            fontWeight: 600,
-                            color: "#3a245d",
-                          }}
-                        >
-                          Business Phone
-                        </span>
-                        <span
-                          aria-hidden="true"
-                          style={{
-                            width: "18px",
-                            height: "18px",
-                            borderRadius: "50%",
-                            backgroundColor: "#f1e8ff",
-                            color: "#6c2bd9",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "12px",
-                            fontWeight: 700,
-                          }}
-                        >
-                          ?
-                        </span>
-                      </span>
-                      <input
-                        id="business-phone-number"
-                        name="businessPhoneNumber"
-                        type="tel"
-                        placeholder="(000) 000-0000"
-                        value={businessPhoneNumber}
-                        onChange={handleBusinessPhoneNumberChange}
-                        onBlur={() => setIsBusinessPhoneNumberTouched(true)}
-                        style={{
-                          borderRadius: "14px",
-                          border: businessPhoneNumberErrorMessage
-                            ? "1px solid #f05c7e"
-                            : "1px solid #e4dbf7",
-                          padding: "16px 18px",
-                          fontSize: "16px",
-                          color: "#2d1f47",
-                          outline: "none",
-                          boxShadow: businessPhoneNumberErrorMessage
-                            ? "0 0 0 3px rgba(240, 92, 126, 0.12)"
-                            : "none",
-                          backgroundColor: FORM_FIELD_BACKGROUND_COLOR,
-                        }}
-                      />
-                    </label>
-                    {businessPhoneNumberErrorMessage ? (
-                      <span
-                        style={{
-                          color: "#d6456d",
-                          fontSize: "13px",
-                          paddingLeft: "4px",
-                        }}
-                      >
-                        {businessPhoneNumberErrorMessage}
-                      </span>
-                    ) : null}
-                  </div>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "8px",
-                    }}
-                  >
-                    <label
-                      htmlFor="business-overview"
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "10px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "15px",
-                            fontWeight: 600,
-                            color: "#3a245d",
-                          }}
-                        >
-                          Business Overview
-                        </span>
-                        <span
-                          aria-hidden="true"
-                          style={{
-                            width: "18px",
-                            height: "18px",
-                            borderRadius: "50%",
-                            backgroundColor: "#f1e8ff",
-                            color: "#6c2bd9",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "12px",
-                            fontWeight: 700,
-                          }}
-                        >
-                          ?
-                        </span>
-                      </span>
-                      <textarea
-                        id="business-overview"
-                        name="businessOverview"
-                        maxLength={BUSINESS_OVERVIEW_CHARACTER_LIMIT}
-                        rows={5}
-                        placeholder=""
-                        value={businessOverview}
-                        onChange={handleBusinessOverviewChange}
-                        onBlur={() => setIsBusinessOverviewTouched(true)}
-                        style={{
-                          borderRadius: "18px",
-                          border: businessOverviewErrorMessage
-                            ? "1px solid #f05c7e"
-                            : "1px solid #e4dbf7",
-                          padding: "18px",
-                          fontSize: "15px",
-                          color: "#2d1f47",
-                          outline: "none",
-                          resize: "vertical",
-                          minHeight: "160px",
-                          boxShadow: businessOverviewErrorMessage
-                            ? "0 0 0 3px rgba(240, 92, 126, 0.12)"
-                            : "none",
-                          backgroundColor: FORM_FIELD_BACKGROUND_COLOR,
-                        }}
-                      />
-                    </label>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        fontSize: "13px",
-                        color: businessOverviewErrorMessage
-                          ? "#d6456d"
-                          : "#8b7aa6",
-                        paddingLeft: "4px",
-                      }}
-                    >
-                      {businessOverviewErrorMessage ? (
-                        <span>{businessOverviewErrorMessage}</span>
-                      ) : (
-                        <span>
-                          Share what callers should know when Aria answers.
-                        </span>
-                      )}
-                      <span style={{ color: "#7a69aa", fontWeight: 600 }}>
-                        {businessOverview.length}/
-                        {BUSINESS_OVERVIEW_CHARACTER_LIMIT}
-                      </span>
-                    </div>
-                  </div>
-                </>
-              ) : null}
-              {isCoreServicesStep && (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "12px",
-                  }}
-                >
-                  <label
-                    htmlFor="core-services-input"
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "12px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "15px",
-                          fontWeight: 600,
-                          color: "#3a245d",
-                        }}
-                      >
-                        Core Services
-                      </span>
-                      <span
-                        aria-hidden="true"
-                        style={{
-                          width: "18px",
-                          height: "18px",
-                          borderRadius: "50%",
-                          backgroundColor: "#f1e8ff",
-                          color: "#6c2bd9",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "12px",
-                          fontWeight: 700,
-                        }}
-                      >
-                        ?
-                      </span>
-                    </span>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        borderRadius: "16px",
-                        border: "1px solid #e4dbf7",
-                        padding: "12px",
-                        backgroundColor: FORM_FIELD_BACKGROUND_COLOR,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          alignItems: "center",
-                          gap: "8px",
-                          flex: 1,
-                        }}
-                      >
-                        {coreServices.map((service) => (
-                          <span
-                            key={service}
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "6px",
-                              padding: "6px 10px",
-                              borderRadius: "12px",
-                              backgroundColor: "rgba(124, 58, 237, 0.12)",
-                              color: "#4c1d95",
-                              fontSize: "14px",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {service}
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveCoreService(service)}
-                              style={{
-                                border: "none",
-                                background: "transparent",
-                                color: "#7c3aed",
-                                cursor: "pointer",
-                                padding: 0,
-                                fontSize: "14px",
-                                lineHeight: 1,
-                              }}
-                              aria-label={`Remove ${service}`}
-                            >
-                              x
-                            </button>
-                          </span>
-                        ))}
-                        <input
-                          id="core-services-input"
-                          name="coreServices"
-                          type="text"
-                          value={coreServiceInputValue}
-                          onChange={handleCoreServicesInputChange}
-                          onKeyDown={handleCoreServicesKeyDown}
-                          placeholder='Type and hit "Enter" to add new services.'
-                          style={{
-                            flex: 1,
-                            minWidth: "160px",
-                            border: "none",
-                            background: "transparent",
-                            outline: "none",
-                            fontSize: "15px",
-                            color: "#2d1f47",
-                          }}
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleAddCoreService}
-                        style={{
-                          width: "34px",
-                          height: "34px",
-                          borderRadius: "10px",
-                          border: "1px solid #d7c9f4",
-                          backgroundColor: "#f8f4ff",
-                          color: "#5a2bc7",
-                          fontSize: "20px",
-                          fontWeight: 700,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor: "pointer",
-                        }}
-                        aria-label="Add core service"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </label>
-                  {coreServicesErrorMessage ? (
-                    <span
-                      style={{
-                        color: "#d6456d",
-                        fontSize: "13px",
-                        paddingLeft: "4px",
-                      }}
-                    >
-                      {coreServicesErrorMessage}
-                    </span>
-                  ) : (
-                    <span
-                      style={{
-                        color: "#7f6e9b",
-                        fontSize: "13px",
-                        paddingLeft: "4px",
-                      }}
-                    >
-                      Type and hit "Enter" to add new services.
-                    </span>
-                  )}
-                  {coreServicesStatus === "saving" ? (
-                    <span
-                      style={{
-                        color: "#6f5b91",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        paddingLeft: "4px",
-                      }}
-                    >
-                      Saving services...
-                    </span>
-                  ) : coreServicesStatus === "saved" ? (
-                    <span
-                      style={{
-                        color: "#4c1d95",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        paddingLeft: "4px",
-                      }}
-                    >
-                      Services saved.
-                    </span>
-                  ) : coreServicesStatus === "error" ? (
-                    <span
-                      style={{
-                        color: "#d6456d",
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        paddingLeft: "4px",
-                      }}
-                    >
-                      Could not save services. Please try again.
-                    </span>
-                  ) : null}
-                </div>
-              )}
-              {isFaqStep ? (
-                <>
-                  {faqEntries.length === 0 ? (
-                    <>
-                      <span
-                        aria-hidden="true"
-                        style={{
-                          width: "72px",
-                          height: "72px",
-                          borderRadius: "24px",
-                          background:
-                            "linear-gradient(135deg, #ede7ff 0%, #f9f5ff 100%)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "32px",
-                          color: "#5b21b6",
-                          fontWeight: 700,
-                        }}
-                      >
-                        ?
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={handleAddFaqEntry}
-                        style={{
-                          borderRadius: "999px",
-                          border: "1px solid #d7c9f4",
-                          backgroundColor: "#f8f4ff",
-                          color: "#5a2bc7",
-                          fontWeight: 600,
-                          padding: "14px 28px",
-                          cursor: "pointer",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <span aria-hidden="true" style={{ fontSize: "18px" }}>
-                          +
-                        </span>
-                        Add Question
-                      </button>
-                    </>
-                  ) : (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "24px",
-                      }}
-                    >
-                      {faqEntries.map((entry, index) => (
-                        <div
-                          key={`faq-entry-${index}`}
-                          style={{
-                            borderRadius: "20px",
-                            border: "1px solid #e6dcfa",
-                            backgroundColor: "#fdfaff",
-                            padding: "24px",
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "18px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: "12px",
-                            }}
-                          >
-                            <label
-                              htmlFor={`faq-question-${index}`}
-                              style={{
-                                fontSize: "14px",
-                                fontWeight: 600,
-                                color: "#3a245d",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                              }}
-                            >
-                              <span>Question</span>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveFaqEntry(index)}
-                                style={{
-                                  border: "none",
-                                  background: "transparent",
-                                  color: "#a855f7",
-                                  cursor: "pointer",
-                                  fontSize: "18px",
-                                  lineHeight: 1,
-                                }}
-                                aria-label="Remove question"
-                              >
-                                ×
-                              </button>
-                            </label>
-                            <input
-                              id={`faq-question-${index}`}
-                              type="text"
-                              placeholder="Add question here..."
-                              value={entry.question}
-                              onChange={(event) =>
-                                handleFaqQuestionChange(index, event)
-                              }
-                              style={{
-                                borderRadius: "14px",
-                                border: "1px solid #d8c9f4",
-                                padding: "16px 18px",
-                                fontSize: "16px",
-                                color: "#2d1f47",
-                                backgroundColor: "#ffffff",
-                                outline: "none",
-                              }}
-                            />
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: "12px",
-                            }}
-                          >
-                            <label
-                              htmlFor={`faq-answer-${index}`}
-                              style={{
-                                fontSize: "14px",
-                                fontWeight: 600,
-                                color: "#3a245d",
-                              }}
-                            >
-                              Answer
-                            </label>
-                            <textarea
-                              id={`faq-answer-${index}`}
-                              rows={4}
-                              placeholder="Add answer here..."
-                              value={entry.answer}
-                              onChange={(event) =>
-                                handleFaqAnswerChange(index, event)
-                              }
-                              style={{
-                                borderRadius: "16px",
-                                border: "1px solid #d8c9f4",
-                                padding: "16px 18px",
-                                fontSize: "15px",
-                                color: "#2d1f47",
-                                backgroundColor: "#ffffff",
-                                resize: "vertical",
-                                minHeight: "140px",
-                                outline: "none",
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={handleAddFaqEntry}
-                        style={{
-                          borderRadius: "999px",
-                          border: "1px solid #d7c9f4",
-                          background:
-                            "linear-gradient(90deg, rgba(124, 58, 237, 0.08), rgba(236, 72, 153, 0.08))",
-                          color: "#5a2bc7",
-                          fontWeight: 600,
-                          padding: "14px 28px",
-                          cursor: "pointer",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <span aria-hidden="true" style={{ fontSize: "18px" }}>
-                          +
-                        </span>
-                        Add Another Question
-                      </button>
-                      {faqStatus === "saving" ? (
-                        <span
-                          style={{
-                            color: "#6f5b91",
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            paddingLeft: "4px",
-                          }}
-                        >
-                          Saving FAQs...
-                        </span>
-                      ) : faqStatus === "saved" ? (
-                        <span
-                          style={{
-                            color: "#4c1d95",
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            paddingLeft: "4px",
-                          }}
-                        >
-                          FAQs saved.
-                        </span>
-                      ) : faqStatus === "error" ? (
-                        <span
-                          style={{
-                            color: "#d6456d",
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            paddingLeft: "4px",
-                          }}
-                        >
-                          Could not save FAQs. Please try again.
-                        </span>
-                      ) : null}
-                    </div>
-                  )}
-                </>
-              ) : null}
-
-              <div
+              <span
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: "20px",
+                  alignSelf: "flex-start",
+                  borderRadius: "999px",
+                  padding: "6px 16px",
+                  backgroundColor: "var(--badge-surface)",
+                  color: "var(--badge-text)",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
                 }}
               >
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "16px" }}
-                >
-                  <span
-                    style={{
-                      fontSize: "14px",
-                      color: "#6f5b91",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {progressLabel}
-                  </span>
-                  <div
-                    style={{
-                      width: "180px",
-                      height: "8px",
-                      borderRadius: "999px",
-                      backgroundColor: "#efe7ff",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: `${progressFillPercentage}%`,
-                        height: "100%",
-                        background:
-                          "linear-gradient(90deg, rgba(124, 58, 237, 0.85), rgba(236, 72, 153, 0.85))",
-                      }}
-                    />
-                  </div>
-                </div>
-                {isFirstFormStep ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "16px",
-                      flexWrap: "wrap",
-                      alignItems: "center",
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={handleCancel}
-                      style={{
-                        borderRadius: "999px",
-                        border: "1px solid #d7c9f4",
-                        backgroundColor: "transparent",
-                        color: "#5a2bc7",
-                        fontWeight: 600,
-                        padding: "14px 26px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type={primaryButtonType}
-                      onClick={primaryButtonOnClick}
-                      disabled={isSaving || isPrimaryButtonDisabled}
-                      style={{
-                        borderRadius: "999px",
-                        border: "none",
-                        background: "linear-gradient(90deg, #7c3aed, #ec4899)",
-                        color: "#ffffff",
-                        fontWeight: 700,
-                        padding: "14px 32px",
-                        boxShadow: "0 18px 35px rgba(124, 58, 237, 0.28)",
-                        cursor:
-                          isSaving || isPrimaryButtonDisabled
-                            ? "not-allowed"
-                            : "pointer",
-                        opacity: isSaving || isPrimaryButtonDisabled ? 0.7 : 1,
-                      }}
-                    >
-                      {primaryButtonLabel}
-                    </button>
-                    {didFailSave ? (
-                      <span
-                        style={{
-                          color: "#d6456d",
-                          fontSize: "13px",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Could not save changes. Please try again.
-                      </span>
-                    ) : null}
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: "16px",
-                      flexWrap: "wrap",
-                      alignItems: "center",
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={handleGoToPreviousStep}
-                      style={{
-                        borderRadius: "999px",
-                        border: "1px solid #d7c9f4",
-                        backgroundColor: "#f8f4ff",
-                        color: "#5a2bc7",
-                        fontWeight: 600,
-                        padding: "12px 24px",
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
-                    >
-                      <span aria-hidden="true" style={{ fontSize: "18px" }}>
-                        ←
-                      </span>
-                      Back
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleGoToNextStep}
-                      disabled={
-                        activeFormStep === 2 &&
-                        (isSaving || coreServicesStatus === "saving")
-                      }
-                      style={{
-                        borderRadius: "999px",
-                        border: "none",
-                        background: "linear-gradient(90deg, #7c3aed, #ec4899)",
-                        color: "#ffffff",
-                        fontWeight: 700,
-                        padding: "12px 28px",
-                        boxShadow: "0 18px 35px rgba(124, 58, 237, 0.28)",
-                        cursor:
-                          activeFormStep === 2 &&
-                          (isSaving || coreServicesStatus === "saving")
-                            ? "not-allowed"
-                            : "pointer",
-                        opacity:
-                          activeFormStep === 2 &&
-                          (isSaving || coreServicesStatus === "saving")
-                            ? 0.7
-                            : 1,
-                      }}
-                    >
-                      {activeFormStep === 2 &&
-                      (isSaving || coreServicesStatus === "saving")
-                        ? "Saving..."
-                        : "Next"}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </form>
-          </section>
-        ) : null}
+                Customize
+              </span>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: "34px",
+                  color: "var(--text-heading)",
+                }}
+              >
+                Customize your agent
+              </h1>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "16px",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                Complete these four steps to get Aria ready for test calls. You
+                can update settings anytime as your business evolves.
+              </p>
+            </div>
+            <a
+              href="#logout"
+              onClick={handleLogout}
+              style={{
+                fontWeight: 600,
+                color: "var(--brand-primary)",
+                textDecoration: "none",
+              }}
+            >
+              Log out
+            </a>
+          </header>
 
-        {isGreetingStep ? (
           <section
             style={{
+              borderRadius: "18px",
+              border: `1px solid ${FORM_FIELD_BORDER_COLOR}`,
+              backgroundColor: "var(--surface-elevated)",
+              padding: "24px 28px",
               display: "flex",
-              flexDirection: "column",
-              gap: "20px",
+              justifyContent: "space-between",
+              alignItems: "center",
               width: "100%",
               maxWidth: "1080px",
               margin: "0 auto",
+              boxShadow: "var(--shadow-card-subtle)",
             }}
           >
-            <article
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+            >
+              <span
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: "var(--text-tertiary)",
+                  letterSpacing: "0.08em",
+                }}
+              >
+                YOUR AGENT IS TRAINED ON
+              </span>
+              <span
+                style={{ fontSize: "16px", color: "var(--text-secondary)" }}
+              >
+                No sources connected yet
+              </span>
+            </div>
+            <button
+              type="button"
               style={{
-                position: "relative",
-                borderRadius: "26px",
-                backgroundColor: "#ffffff",
-                border: "1px solid #ede3ff",
-                boxShadow: "0 26px 60px rgba(60, 15, 115, 0.12)",
-                padding: "36px",
+                border: `1px solid ${FORM_FIELD_BORDER_COLOR}`,
+                borderRadius: "999px",
+                padding: "10px 20px",
+                backgroundColor: "var(--surface-highlight)",
+                color: "var(--brand-primary-strong)",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              Edit
+            </button>
+          </section>
+
+          {!isGreetingStep ? (
+            <section
+              style={{
+                borderRadius: "28px",
+                backgroundColor: "var(--surface-elevated)",
+                boxShadow: "var(--shadow-card-subtle)",
+                border: `1px solid ${FORM_FIELD_BORDER_COLOR}`,
+                padding: "40px",
                 display: "flex",
                 flexDirection: "column",
-                gap: "24px",
+                gap: "32px",
+                width: "100%",
+                maxWidth: "1080px",
+                margin: "0 auto",
               }}
             >
               <header
@@ -2153,12 +1292,413 @@ export default function QuickStart() {
                   gap: "12px",
                 }}
               >
-                <div
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: "24px",
+                    color: "var(--text-heading)",
+                  }}
+                >
+                  {formStepCopy.title}
+                </h2>
+                <p
+                  style={{
+                    margin: 0,
+                    color: "var(--text-secondary)",
+                    fontSize: "15px",
+                  }}
+                >
+                  {formStepCopy.description}
+                </p>
+              </header>
+
+              <form
+                onSubmit={handleSubmit}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "28px",
+                  maxWidth: "960px",
+                  width: "100%",
+                  margin: "0 auto",
+                }}
+              >
+                {isFirstFormStep ? (
+                  <>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
+                      <label
+                        htmlFor="business-name"
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "10px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "15px",
+                              fontWeight: 600,
+                              color: FORM_FIELD_LABEL_COLOR,
+                            }}
+                          >
+                            Business Name
+                          </span>
+                          <span
+                            aria-hidden="true"
+                            style={{
+                              width: "18px",
+                              height: "18px",
+                              borderRadius: "50%",
+                              backgroundColor: FORM_FIELD_ICON_BACKGROUND,
+                              color: FORM_FIELD_ICON_COLOR,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                            }}
+                          >
+                            ?
+                          </span>
+                        </span>
+                        <input
+                          id="business-name"
+                          name="businessName"
+                          type="text"
+                          placeholder="Your Business"
+                          value={businessName}
+                          onChange={handleBusinessNameChange}
+                          onBlur={() => setIsBusinessNameTouched(true)}
+                          style={{
+                            borderRadius: "14px",
+                            border: businessNameErrorMessage
+                              ? `1px solid ${FORM_FIELD_ERROR_BORDER_COLOR}`
+                              : `1px solid ${FORM_FIELD_BORDER_COLOR}`,
+                            padding: "16px 18px",
+                            fontSize: "16px",
+                            color: "var(--text-primary)",
+                            outline: "none",
+                            boxShadow: businessNameErrorMessage
+                              ? FORM_FIELD_ERROR_GLOW
+                              : "none",
+                            backgroundColor: FORM_FIELD_BACKGROUND_COLOR,
+                          }}
+                        />
+                      </label>
+                      {businessNameErrorMessage ? (
+                        <span
+                          style={{
+                            color: "var(--text-negative)",
+                            fontSize: "13px",
+                            paddingLeft: "4px",
+                          }}
+                        >
+                          {businessNameErrorMessage}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
+                      <label
+                        htmlFor="business-phone-number"
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "10px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "15px",
+                              fontWeight: 600,
+                              color: FORM_FIELD_LABEL_COLOR,
+                            }}
+                          >
+                            Business Phone
+                          </span>
+                          <span
+                            aria-hidden="true"
+                            style={{
+                              width: "18px",
+                              height: "18px",
+                              borderRadius: "50%",
+                              backgroundColor: FORM_FIELD_ICON_BACKGROUND,
+                              color: FORM_FIELD_ICON_COLOR,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                            }}
+                          >
+                            ?
+                          </span>
+                        </span>
+                        <input
+                          id="business-phone-number"
+                          name="businessPhoneNumber"
+                          type="tel"
+                          placeholder="(000) 000-0000"
+                          value={businessPhoneNumber}
+                          onChange={handleBusinessPhoneNumberChange}
+                          onBlur={() => setIsBusinessPhoneNumberTouched(true)}
+                          style={{
+                            borderRadius: "14px",
+                            border: businessPhoneNumberErrorMessage
+                              ? `1px solid ${FORM_FIELD_ERROR_BORDER_COLOR}`
+                              : `1px solid ${FORM_FIELD_BORDER_COLOR}`,
+                            padding: "16px 18px",
+                            fontSize: "16px",
+                            color: "var(--text-primary)",
+                            outline: "none",
+                            boxShadow: businessPhoneNumberErrorMessage
+                              ? FORM_FIELD_ERROR_GLOW
+                              : "none",
+                            backgroundColor: FORM_FIELD_BACKGROUND_COLOR,
+                          }}
+                        />
+                      </label>
+                      {businessPhoneNumberErrorMessage ? (
+                        <span
+                          style={{
+                            color: "var(--text-negative)",
+                            fontSize: "13px",
+                            paddingLeft: "4px",
+                          }}
+                        >
+                          {businessPhoneNumberErrorMessage}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
+                      <label
+                        htmlFor="business-overview"
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "10px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "15px",
+                              fontWeight: 600,
+                              color: FORM_FIELD_LABEL_COLOR,
+                            }}
+                          >
+                            Business Overview
+                          </span>
+                          <span
+                            aria-hidden="true"
+                            style={{
+                              width: "18px",
+                              height: "18px",
+                              borderRadius: "50%",
+                              backgroundColor: FORM_FIELD_ICON_BACKGROUND,
+                              color: FORM_FIELD_ICON_COLOR,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                            }}
+                          >
+                            ?
+                          </span>
+                        </span>
+                        <textarea
+                          id="business-overview"
+                          name="businessOverview"
+                          placeholder="Explain what your business does, any specialties, and how you help customers."
+                          value={businessOverview}
+                          onChange={handleBusinessOverviewChange}
+                          onBlur={() => setIsBusinessOverviewTouched(true)}
+                          maxLength={BUSINESS_OVERVIEW_CHARACTER_LIMIT}
+                          style={{
+                            borderRadius: "18px",
+                            border: businessOverviewErrorMessage
+                              ? `1px solid ${FORM_FIELD_ERROR_BORDER_COLOR}`
+                              : `1px solid ${FORM_FIELD_BORDER_COLOR}`,
+                            minHeight: "180px",
+                            padding: "18px 20px",
+                            fontSize: "16px",
+                            color: "var(--text-primary)",
+                            outline: "none",
+                            resize: "vertical",
+                            boxShadow: businessOverviewErrorMessage
+                              ? FORM_FIELD_ERROR_GLOW
+                              : "none",
+                            backgroundColor: FORM_FIELD_BACKGROUND_COLOR,
+                          }}
+                        />
+                      </label>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        {businessOverviewErrorMessage ? (
+                          <span
+                            style={{
+                              color: "var(--text-negative)",
+                              fontSize: "13px",
+                            }}
+                          >
+                            {businessOverviewErrorMessage}
+                          </span>
+                        ) : (
+                          <span
+                            style={{
+                              color: FORM_FIELD_LABEL_COLOR,
+                              fontSize: "13px",
+                            }}
+                          >
+                            Share details about what makes your business unique.
+                          </span>
+                        )}
+                        <span
+                          style={{
+                            color: FORM_FIELD_LABEL_COLOR,
+                            fontSize: "13px",
+                          }}
+                        >
+                          {businessOverview.length}/
+                          {BUSINESS_OVERVIEW_CHARACTER_LIMIT}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                ) : null}
+
+                {formStepCopy.greetingCard ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: "24px",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "12px",
+                        maxWidth: "640px",
+                      }}
+                    >
+                      <h3
+                        style={{
+                          margin: 0,
+                          fontSize: "20px",
+                          color: "var(--text-heading)",
+                        }}
+                      >
+                        {formStepCopy.greetingCard.highlightTitle}
+                      </h3>
+                      <p
+                        style={{
+                          margin: 0,
+                          color: "var(--text-secondary)",
+                          lineHeight: 1.6,
+                        }}
+                      >
+                        {formStepCopy.greetingCard.highlightDescription}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleNavigateToGreeting}
+                      style={{
+                        borderRadius: "999px",
+                        border: "none",
+                        background: "var(--brand-gradient)",
+                        color: "var(--text-inverse)",
+                        fontWeight: 700,
+                        padding: "12px 28px",
+                        boxShadow: "var(--shadow-elevated-strong)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {formStepCopy.greetingCard.primaryActionLabel}
+                    </button>
+                  </div>
+                ) : null}
+              </form>
+            </section>
+          ) : null}
+
+          {isGreetingStep ? (
+            <section
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "20px",
+                width: "100%",
+                maxWidth: "1080px",
+                margin: "0 auto",
+              }}
+            >
+              <article
+                style={{
+                  position: "relative",
+                  borderRadius: "26px",
+                  backgroundColor: "var(--surface-elevated)",
+                  border: `1px solid ${FORM_FIELD_BORDER_COLOR}`,
+                  boxShadow: "var(--shadow-card-subtle)",
+                  padding: "36px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "24px",
+                }}
+              >
+                <header
                   style={{
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    flexWrap: "wrap",
+                    flexDirection: "column",
                     gap: "12px",
                   }}
                 >
@@ -2166,531 +1706,457 @@ export default function QuickStart() {
                     style={{
                       display: "flex",
                       alignItems: "center",
+                      justifyContent: "space-between",
+                      flexWrap: "wrap",
                       gap: "12px",
                     }}
                   >
-                    <span
-                      aria-hidden="true"
-                      style={{
-                        width: "42px",
-                        height: "42px",
-                        borderRadius: "14px",
-                        background:
-                          "linear-gradient(140deg, rgba(124, 58, 237, 0.18), rgba(236, 72, 153, 0.24))",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "#7c3aed",
-                        fontWeight: 700,
-                        fontSize: "16px",
-                      }}
-                    >
-                      4
-                    </span>
                     <div
                       style={{
                         display: "flex",
-                        flexDirection: "column",
-                        gap: "4px",
-                      }}
-                    >
-                      <h2
-                        style={{
-                          margin: 0,
-                          fontSize: "22px",
-                          color: "#301254",
-                          fontWeight: 700,
-                        }}
-                      >
-                        Personalize Your Greeting
-                      </h2>
-                      <span
-                        style={{
-                          color: "#7b6a97",
-                          fontSize: "14px",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Make a great first impression before you launch.
-                      </span>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "12px",
-                    }}
-                  >
-                    <time
-                      dateTime="PT2M"
-                      style={{
-                        borderRadius: "999px",
-                        backgroundColor: "#f4edff",
-                        color: "#5a2bc7",
-                        fontWeight: 600,
-                        fontSize: "13px",
-                        padding: "6px 14px",
-                      }}
-                    >
-                      2 min
-                    </time>
-                    <span
-                      style={{
-                        display: "inline-flex",
                         alignItems: "center",
-                        gap: "6px",
-                        color: "#6f5b91",
-                        fontSize: "13px",
-                        fontWeight: 600,
+                        gap: "12px",
                       }}
                     >
                       <span
                         aria-hidden="true"
                         style={{
-                          width: "10px",
-                          height: "10px",
-                          borderRadius: "50%",
-                          backgroundColor: "#4ade80",
+                          width: "42px",
+                          height: "42px",
+                          borderRadius: "14px",
+                          background: "var(--card-gradient-strong)",
                           display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "var(--text-inverse)",
+                          fontWeight: 700,
+                          fontSize: "16px",
                         }}
-                      />
-                      Required
-                    </span>
+                      >
+                        4
+                      </span>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "4px",
+                        }}
+                      >
+                        <h2
+                          style={{
+                            margin: 0,
+                            fontSize: "22px",
+                            color: "var(--text-heading)",
+                            fontWeight: 700,
+                          }}
+                        >
+                          Personalize Your Greeting
+                        </h2>
+                        <span
+                          style={{
+                            color: "var(--text-secondary)",
+                            fontSize: "14px",
+                            fontWeight: 600,
+                          }}
+                        >
+                          Make a great first impression before you launch.
+                        </span>
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "12px",
+                      }}
+                    >
+                      <time
+                        dateTime="PT2M"
+                        style={{
+                          borderRadius: "999px",
+                          backgroundColor: "var(--surface-highlight)",
+                          color: "var(--brand-primary-strong)",
+                          fontWeight: 600,
+                          fontSize: "13px",
+                          padding: "6px 14px",
+                        }}
+                      >
+                        2 min
+                      </time>
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          color: "var(--text-secondary)",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                        }}
+                      >
+                        <span
+                          aria-hidden="true"
+                          style={{
+                            width: "10px",
+                            height: "10px",
+                            borderRadius: "50%",
+                            backgroundColor: "var(--text-positive)",
+                            display: "inline-flex",
+                          }}
+                        />
+                        Required
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <p
+                  <p
+                    style={{
+                      margin: 0,
+                      color: "var(--text-secondary)",
+                      fontSize: "14px",
+                      lineHeight: 1.65,
+                    }}
+                  >
+                    Record or type the greeting callers hear when Aria answers.
+                    A warm introduction sets expectations and keeps your brand
+                    front-and-center from the first second.
+                  </p>
+                </header>
+
+                <div
                   style={{
-                    margin: 0,
-                    color: "#7d6fa1",
-                    fontSize: "14px",
-                    lineHeight: 1.65,
+                    borderRadius: "20px",
+                    border: `1px solid ${FORM_FIELD_BORDER_COLOR}`,
+                    background: "var(--surface-elevated)",
+                    padding: "28px 26px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "18px",
                   }}
                 >
-                  Record or type the greeting callers hear when Aria answers. A
-                  warm introduction sets expectations and keeps your brand
-                  front-and-center from the first second.
-                </p>
-              </header>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "6px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        color: FORM_FIELD_LABEL_COLOR,
+                        letterSpacing: "0.06em",
+                      }}
+                    >
+                      {didChangeGreeting ? "GREETING" : "SAMPLE GREETING"}
+                    </span>
+                    {isEditingGreeting ? (
+                      <textarea
+                        value={greetingDraft}
+                        onChange={(event) => {
+                          setGreetingDraft(event.target.value);
+                          setGreetingStatus("idle");
+                          setDidChangeGreeting(
+                            event.target.value.trim() !==
+                              greetingOriginal.trim()
+                          );
+                        }}
+                        rows={4}
+                        maxLength={500}
+                        style={{
+                          borderRadius: "16px",
+                          border: `1px solid ${FORM_FIELD_BORDER_COLOR}`,
+                          padding: "16px 18px",
+                          fontSize: "15px",
+                          color: "var(--text-primary)",
+                          backgroundColor: FORM_FIELD_BACKGROUND_COLOR,
+                          resize: "vertical",
+                          minHeight: "140px",
+                          outline: "none",
+                        }}
+                      />
+                    ) : (
+                      <p
+                        style={{
+                          margin: 0,
+                          color: "var(--text-primary)",
+                          fontSize: "15px",
+                          lineHeight: 1.7,
+                          fontWeight: 600,
+                        }}
+                      >
+                        "{greetingDraft}"
+                      </p>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                      gap: "12px",
+                    }}
+                  >
+                    <label
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontSize: "13px",
+                        color: FORM_FIELD_LABEL_COLOR,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={hasRecordingDisclaimer}
+                        onChange={handleRecordingDisclaimerToggle}
+                        style={{
+                          accentColor: "var(--brand-primary-strong)",
+                          width: "16px",
+                          height: "16px",
+                        }}
+                      />
+                      Recording disclaimer included
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleResetGreeting}
+                      style={{
+                        borderRadius: "999px",
+                        border: `1px solid ${FORM_FIELD_BORDER_COLOR}`,
+                        padding: "8px 18px",
+                        backgroundColor: "var(--surface-highlight)",
+                        color: "var(--brand-primary-strong)",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Reset
+                    </button>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={handlePlayGreeting}
+                      disabled={isPlayingGreeting}
+                      style={{
+                        borderRadius: "999px",
+                        border: "none",
+                        padding: "10px 24px",
+                        background: "var(--brand-gradient)",
+                        color: "var(--text-inverse)",
+                        fontWeight: 600,
+                        boxShadow: "var(--shadow-elevated-strong)",
+                        cursor: isPlayingGreeting ? "not-allowed" : "pointer",
+                        opacity: isPlayingGreeting ? 0.7 : 1,
+                      }}
+                    >
+                      {isPlayingGreeting ? "Playing…" : "Play greeting"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRecordingDisclaimerUpdate}
+                      style={{
+                        borderRadius: "999px",
+                        border: `1px solid ${FORM_FIELD_BORDER_COLOR}`,
+                        padding: "10px 24px",
+                        backgroundColor: "var(--surface-highlight)",
+                        color: "var(--brand-primary-strong)",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Update recording disclaimer
+                    </button>
+                  </div>
+                </div>
 
-              <div
+                <footer
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "12px",
+                    color: FORM_FIELD_LABEL_COLOR,
+                    fontSize: "13px",
+                  }}
+                >
+                  <span>
+                    Changes save automatically when you stop typing. Need ideas?
+                    Try our sample greeting.
+                  </span>
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <button
+                      type="button"
+                      onClick={handleUseSampleGreeting}
+                      style={{
+                        borderRadius: "999px",
+                        border: `1px solid ${FORM_FIELD_BORDER_COLOR}`,
+                        padding: "8px 18px",
+                        backgroundColor: "var(--surface-highlight)",
+                        color: "var(--brand-primary-strong)",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Use sample greeting
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleEditGreeting}
+                      style={{
+                        borderRadius: "999px",
+                        border: "none",
+                        padding: "10px 22px",
+                        background: "var(--brand-gradient)",
+                        color: "var(--text-inverse)",
+                        fontWeight: 600,
+                        boxShadow: "var(--shadow-elevated-strong)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {isEditingGreeting ? "Save" : "Edit"}
+                    </button>
+                  </div>
+                </footer>
+              </article>
+
+              <aside
                 style={{
-                  borderRadius: "20px",
-                  border: "1px solid #e5d9ff",
-                  background:
-                    "linear-gradient(135deg, rgba(245, 240, 255, 0.8), rgba(253, 247, 255, 0.98))",
+                  borderRadius: "22px",
+                  border: `1px solid ${FORM_FIELD_BORDER_COLOR}`,
+                  backgroundColor: "var(--surface-elevated)",
                   padding: "28px 26px",
                   display: "flex",
                   flexDirection: "column",
                   gap: "18px",
+                  width: "100%",
                 }}
               >
                 <div
                   style={{
                     display: "flex",
-                    flexDirection: "column",
-                    gap: "6px",
+                    alignItems: "center",
+                    gap: "12px",
                   }}
                 >
                   <span
+                    aria-hidden="true"
                     style={{
-                      fontSize: "13px",
+                      width: "36px",
+                      height: "36px",
+                      borderRadius: "12px",
+                      background: "var(--card-gradient-strong)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "var(--text-inverse)",
+                      fontSize: "18px",
                       fontWeight: 700,
-                      color: "#8a77b1",
-                      letterSpacing: "0.06em",
                     }}
                   >
-                    {didChangeGreeting ? "GREETING" : "SAMPLE GREETING"}
+                    💡
                   </span>
-                  {isEditingGreeting ? (
-                    <textarea
-                      value={greetingDraft}
-                      onChange={(event) => {
-                        setGreetingDraft(event.target.value);
-                        setGreetingStatus("idle");
-                        setDidChangeGreeting(
-                          event.target.value.trim() !== greetingOriginal.trim()
-                        );
-                      }}
-                      rows={4}
-                      maxLength={500}
-                      style={{
-                        borderRadius: "16px",
-                        border: "1px solid #d8c9f4",
-                        padding: "16px 18px",
-                        fontSize: "15px",
-                        color: "#2d1f47",
-                        backgroundColor: "#ffffff",
-                        resize: "vertical",
-                        minHeight: "140px",
-                        outline: "none",
-                      }}
-                    />
-                  ) : (
-                    <p
-                      style={{
-                        margin: 0,
-                        color: "#321a64",
-                        fontSize: "15px",
-                        lineHeight: 1.7,
-                        fontWeight: 600,
-                      }}
-                    >
-                      "{greetingDraft}"
-                    </p>
-                  )}
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    alignItems: "center",
-                    gap: "12px",
-                  }}
-                >
-                  <label
+                  <h3
                     style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "13px",
-                      color: "#5b4791",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={hasRecordingDisclaimer}
-                      onChange={handleRecordingDisclaimerToggle}
-                      style={{
-                        accentColor: "#7c3aed",
-                        width: "16px",
-                        height: "16px",
-                      }}
-                    />
-                    Recording disclaimer included
-                  </label>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  {isEditingGreeting ? (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={handleGreetingCancelEdit}
-                        style={{
-                          borderRadius: "12px",
-                          border: "1px solid #d7c9f4",
-                          backgroundColor: "#f8f4ff",
-                          color: "#5a2bc7",
-                          fontWeight: 600,
-                          padding: "12px 22px",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleGreetingSaveAndClose}
-                        disabled={greetingDraft.trim() === ""}
-                        style={{
-                          borderRadius: "12px",
-                          border: "none",
-                          background:
-                            "linear-gradient(90deg, #7c3aed, #ec4899)",
-                          color: "#ffffff",
-                          fontWeight: 700,
-                          padding: "12px 22px",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          cursor:
-                            greetingDraft.trim() === ""
-                              ? "not-allowed"
-                              : "pointer",
-                          opacity: greetingDraft.trim() === "" ? 0.7 : 1,
-                        }}
-                      >
-                        Done
-                      </button>
-                      <span
-                        style={{
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          color:
-                            greetingStatus === "error"
-                              ? "#d6456d"
-                              : greetingStatus === "saved"
-                              ? "#4c1d95"
-                              : "#6f5b91",
-                        }}
-                      >
-                        {greetingStatus === "saving"
-                          ? "Saving greeting..."
-                          : greetingStatus === "saved"
-                          ? "Greeting saved."
-                          : greetingStatus === "error"
-                          ? "Could not save greeting. Please try again."
-                          : ""}
-                      </span>
-                    </div>
-                  ) : (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => handleEnableGreetingEdit(true)}
-                        style={{
-                          borderRadius: "12px",
-                          border: "none",
-                          background:
-                            "linear-gradient(90deg, #7c3aed, #ec4899)",
-                          color: "#ffffff",
-                          fontWeight: 700,
-                          padding: "12px 22px",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          cursor: "pointer",
-                          boxShadow: "0 14px 30px rgba(124, 58, 237, 0.2)",
-                        }}
-                      >
-                        <span aria-hidden="true" style={{ fontSize: "18px" }}>
-                          ✎
-                        </span>
-                        Make Changes
-                      </button>
-                      <span
-                        style={{
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          color:
-                            greetingStatus === "error"
-                              ? "#d6456d"
-                              : greetingStatus === "saved"
-                              ? "#4c1d95"
-                              : "#6f5b91",
-                        }}
-                      >
-                        {greetingStatus === "saving"
-                          ? "Saving greeting..."
-                          : greetingStatus === "saved"
-                          ? "Greeting saved."
-                          : greetingStatus === "error"
-                          ? "Could not save greeting. Please try again."
-                          : ""}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <footer
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: "16px",
-                  color: "#7c6fa2",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                }}
-              >
-                <span>Step 4 of 4</span>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "12px",
-                    flexWrap: "wrap",
-                    alignItems: "center",
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={handleGoToPreviousStep}
-                    style={{
-                      borderRadius: "999px",
-                      border: "1px solid #d7c9f4",
-                      backgroundColor: "#f8f4ff",
-                      color: "#5a2bc7",
-                      fontWeight: 600,
-                      padding: "12px 24px",
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <span aria-hidden="true" style={{ fontSize: "18px" }}>
-                      ←
-                    </span>
-                    Back
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleGoToNextStep}
-                    style={{
-                      borderRadius: "999px",
-                      border: "none",
-                      background: "linear-gradient(90deg, #7c3aed, #ec4899)",
-                      color: "#ffffff",
+                      margin: 0,
+                      fontSize: "18px",
+                      color: "var(--text-heading)",
                       fontWeight: 700,
-                      padding: "12px 28px",
-                      boxShadow: "0 18px 35px rgba(124, 58, 237, 0.28)",
-                      cursor: "pointer",
                     }}
                   >
-                    Next
-                  </button>
+                    Tips for a Great Greeting
+                  </h3>
                 </div>
-              </footer>
-            </article>
-
-            <aside
-              style={{
-                borderRadius: "24px",
-                border: "1px solid #ede3ff",
-                backgroundColor: "#fbf8ff",
-                padding: "32px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "18px",
-                color: "#58457f",
-                boxShadow: "0 18px 40px rgba(93, 53, 138, 0.08)",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                }}
-              >
-                <span
-                  aria-hidden="true"
-                  style={{
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "12px",
-                    background:
-                      "linear-gradient(140deg, rgba(124, 58, 237, 0.22), rgba(236, 72, 153, 0.22))",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#7c3aed",
-                    fontSize: "18px",
-                    fontWeight: 700,
-                  }}
-                >
-                  💡
-                </span>
-                <h3
+                <ul
                   style={{
                     margin: 0,
-                    fontSize: "18px",
-                    color: "#301254",
-                    fontWeight: 700,
+                    paddingLeft: "20px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                    fontSize: "14px",
+                    lineHeight: 1.6,
+                    color: "var(--text-secondary)",
                   }}
                 >
-                  Tips for a Great Greeting
-                </h3>
-              </div>
-              <ul
-                style={{
-                  margin: 0,
-                  paddingLeft: "20px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                  fontSize: "14px",
-                  lineHeight: 1.6,
-                }}
-              >
-                <li>Include your business name and agent name right away.</li>
-                <li>Set expectations about recording or next steps.</li>
-                <li>Invite the caller to share how you can help.</li>
-              </ul>
-            </aside>
-          </section>
-        ) : null}
+                  <li>Include your business name and agent name right away.</li>
+                  <li>Set expectations about recording or next steps.</li>
+                  <li>Invite the caller to share how you can help.</li>
+                </ul>
+              </aside>
+            </section>
+          ) : null}
 
-        <section
-          style={{
-            display: "flex",
-            justifyContent: "flex-start",
-            alignItems: "center",
-            gap: "28px",
-            flexWrap: "wrap",
-            width: "100%",
-            maxWidth: "1080px",
-            margin: "0 auto",
-          }}
-        >
-          <div
+          <section
             style={{
               display: "flex",
+              justifyContent: "flex-start",
               alignItems: "center",
-              gap: "18px",
-              borderRadius: "22px",
-              padding: "18px 24px",
-              background: "linear-gradient(105deg, #f5f0ff 0%, #fdf7ff 100%)",
-              border: "1px solid #e8ddff",
-              flex: "0 1 360px",
+              gap: "28px",
+              flexWrap: "wrap",
+              width: "100%",
+              maxWidth: "1080px",
+              margin: "0 auto",
             }}
           >
             <div
               style={{
-                width: "72px",
-                height: "48px",
-                borderRadius: "16px",
-                backgroundColor: "#d8c4ff",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                color: "#3a1d65",
-                fontWeight: 700,
+                gap: "18px",
+                borderRadius: "22px",
+                padding: "18px 24px",
+                background: "var(--surface-elevated)",
+                border: `1px solid ${FORM_FIELD_BORDER_COLOR}`,
+                flex: "0 1 360px",
+                boxShadow: "var(--shadow-card-subtle)",
               }}
             >
-              ▶
-            </div>
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "6px" }}
-            >
-              <span
-                style={{ fontSize: "15px", fontWeight: 600, color: "#311b63" }}
+              <div
+                style={{
+                  width: "72px",
+                  height: "48px",
+                  borderRadius: "16px",
+                  backgroundColor: "var(--surface-highlight)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--brand-primary-strong)",
+                  fontWeight: 700,
+                }}
               >
-                Want to see more before setting up?
-              </span>
-              <span style={{ fontSize: "14px", color: "#7f6e9b" }}>
-                Watch a quick tour here.
-              </span>
+                ▶
+              </div>
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: "6px" }}
+              >
+                <span
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: 600,
+                    color: "var(--text-heading)",
+                  }}
+                >
+                  Want to see more before setting up?
+                </span>
+                <span
+                  style={{ fontSize: "14px", color: "var(--text-secondary)" }}
+                >
+                  Watch a quick tour here.
+                </span>
+              </div>
             </div>
-          </div>
+          </section>
         </section>
       </main>
     </div>
