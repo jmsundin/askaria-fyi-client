@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { authFetch, clearToken, type AuthUser } from "./auth";
 import Sidebar from "./components/Sidebar";
 
@@ -70,11 +70,10 @@ export default function Home() {
     };
   }, []);
 
-  function handleLogout(event: MouseEvent<HTMLAnchorElement>) {
-    event.preventDefault();
+  const handleLogout = useCallback(() => {
     clearToken();
     window.location.href = "/login";
-  }
+  }, []);
 
   const sidebarBusinessLabel = user?.name ?? "Sunday's Off Pool Company";
 
@@ -88,7 +87,11 @@ export default function Home() {
         fontFamily: "inherit",
       }}
     >
-      <Sidebar activeItem="settings" businessLabel={sidebarBusinessLabel} />
+      <Sidebar
+        activeItem="settings"
+        businessLabel={sidebarBusinessLabel}
+        onLogout={handleLogout}
+      />
       <main
         style={{
           flex: 1,
@@ -138,17 +141,6 @@ export default function Home() {
               </p>
             </div>
             <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-              <a
-                href="#"
-                onClick={handleLogout}
-                style={{
-                  fontWeight: 600,
-                  color: "var(--brand-primary)",
-                  textDecoration: "none",
-                }}
-              >
-                Log out
-              </a>
               <button
                 type="button"
                 style={{

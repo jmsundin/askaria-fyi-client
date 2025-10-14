@@ -5,14 +5,16 @@ import {
   useRef,
   useState,
   type DragEvent,
-  type MouseEvent,
   type ReactNode,
 } from "react";
+import WaveSurfer from "wavesurfer.js";
 import {
   TbChevronDown,
   TbGripVertical,
   TbLayoutSidebarLeftCollapseFilled,
   TbLayoutSidebarRightCollapseFilled,
+  TbPlayerPauseFilled,
+  TbPlayerPlayFilled,
 } from "react-icons/tb";
 import Sidebar from "./components/Sidebar";
 import { authFetch, clearToken, type AuthUser } from "./auth";
@@ -40,7 +42,11 @@ type TimelineEntry = {
   speakerLabel: string;
   timestampLabel: string;
   content: string;
+  offsetSeconds: number | null;
 };
+
+const SECONDS_PER_MINUTE = 60;
+const SECONDS_PER_HOUR = SECONDS_PER_MINUTE * 60;
 
 function formatAbsoluteTimestamp(timestamp: string | null): string {
   if (!timestamp) return "Unknown time";
@@ -86,7 +92,35 @@ function formatDuration(durationSeconds: number | null): string {
   );
 }
 
-function buildTimeline(messages: TranscriptMessage[]): TimelineEntry[] {
+function formatAudioTimestamp(totalSeconds: number): string {
+  if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) {
+    return "0:00";
+  }
+  const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(safeSeconds / SECONDS_PER_HOUR);
+  const minutes = Math.floor(
+    (safeSeconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE
+  );
+  const seconds = safeSeconds % SECONDS_PER_MINUTE;
+
+  const minutesLabel =
+    hours > 0 ? String(minutes).padStart(2, "0") : String(minutes);
+  const secondsLabel = String(seconds).padStart(2, "0");
+
+  return hours > 0
+    ? `${hours}:${minutesLabel}:${secondsLabel}`
+    : `${minutesLabel}:${secondsLabel}`;
+}
+
+function buildTimeline(
+  messages: TranscriptMessage[],
+  callStartedAt: string | null,
+  recordingDuration: number | null
+): TimelineEntry[] {
+  const callStartTimestamp = callStartedAt
+    ? new Date(callStartedAt).getTime()
+    : null;
+
   return messages.map((message) => {
     const timestampLabel = message.capturedAt
       ? new Date(message.capturedAt).toLocaleTimeString([], {
@@ -94,6 +128,23 @@ function buildTimeline(messages: TranscriptMessage[]): TimelineEntry[] {
           minute: "2-digit",
         })
       : "";
+
+    let offsetSeconds: number | null = null;
+    if (callStartTimestamp && message.capturedAt) {
+      const messageTimestamp = new Date(message.capturedAt).getTime();
+      if (Number.isFinite(messageTimestamp)) {
+        const rawOffset = (messageTimestamp - callStartTimestamp) / 1000;
+        const boundedOffset = Math.max(0, rawOffset);
+        if (
+          typeof recordingDuration === "number" &&
+          Number.isFinite(recordingDuration)
+        ) {
+          offsetSeconds = Math.min(boundedOffset, recordingDuration);
+        } else {
+          offsetSeconds = boundedOffset;
+        }
+      }
+    }
 
     let speaker: "agent" | "caller" | "other" = "other";
     if (message.speaker === "agent") speaker = "agent";
@@ -112,6 +163,7 @@ function buildTimeline(messages: TranscriptMessage[]): TimelineEntry[] {
       speakerLabel,
       timestampLabel,
       content: message.content,
+      offsetSeconds,
     };
   });
 }
@@ -120,16 +172,11 @@ function extractSummaryEntries(call: CallListItem): SummaryEntry[] {
   const summary = call.summary ?? {};
   const entries: SummaryEntry[] = [];
 
-  const callerName =
-    (typeof summary === "object" && summary && "callerName" in summary
-      ? (summary as Record<string, unknown>).callerName
-      : null) ?? call.callerName;
+  const callerName = resolveCallerName(call) || null;
   entries.push({
     label: "Caller",
     value: callerName ? String(callerName) : null,
   });
-
-  entries.push({ label: "Caller Phone", value: call.fromNumber });
 
   if (typeof summary === "object" && summary) {
     const summaryRecord = summary as Record<string, unknown>;
@@ -161,24 +208,12 @@ function extractSummaryEntries(call: CallListItem): SummaryEntry[] {
       });
     }
 
-    if (summaryRecord.notes) {
-      entries.push({ label: "Notes", value: String(summaryRecord.notes) });
-    }
-
     if (summaryRecord.customerAvailability) {
       entries.push({
         label: "Availability",
         value: String(summaryRecord.customerAvailability),
       });
     }
-  }
-
-  if (
-    !entries.some((entry) => entry.label === "Notes") &&
-    call.transcriptText
-  ) {
-    const firstSentence = call.transcriptText.split(/(?<=[.!?])\s/)[0];
-    entries.push({ label: "Notes", value: firstSentence });
   }
 
   return entries;
@@ -389,11 +424,10 @@ export default function Calls() {
     }
   }
 
-  function handleLogout(event: MouseEvent<HTMLAnchorElement>) {
-    event.preventDefault();
+  const handleLogout = useCallback(() => {
     clearToken();
     window.location.href = "/login";
-  }
+  }, []);
 
   function handleLoadOlderCalls() {
     if (!meta?.nextCursor) return;
@@ -402,19 +436,27 @@ export default function Calls() {
 
   return (
     <div className="calls-page">
-      <Sidebar activeItem="calls" businessLabel={sidebarBusinessLabel} />
+      <Sidebar
+        activeItem="calls"
+        businessLabel={sidebarBusinessLabel}
+        onLogout={handleLogout}
+      />
       <main className="calls-layout">
         <header className="calls-header">
           <div>
             <h1>Calls</h1>
-            <p>
-              Review recordings, transcripts, and caller details from your
-              inbox.
-            </p>
+            <p>Your AI receptionist’s latest activity and call summaries.</p>
           </div>
-          <a href="#" onClick={handleLogout} className="logout-link">
-            Log out
-          </a>
+          <div className="calls-header-actions">
+            <button
+              type="button"
+              className="calls-sync-button"
+              onClick={handleLoadOlderCalls}
+              disabled={loading}
+            >
+              {loading ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
         </header>
 
         <section
@@ -586,7 +628,7 @@ type SelectedCallDetailsProps = {
   onPersistLayout: (preferences: CallLayoutPreferences) => void;
 };
 
-type CallSectionId = "summary" | "transcript" | "notes";
+type CallSectionId = "summary" | "transcript";
 
 type CallDetailSection = {
   id: CallSectionId;
@@ -606,9 +648,91 @@ function SelectedCallDetails({
   onLayoutChange,
   onPersistLayout,
 }: SelectedCallDetailsProps) {
+  const waveformRef = useRef<HTMLDivElement | null>(null);
+  const waveSurferRef = useRef<WaveSurfer | null>(null);
+  const mediaElementRef = useRef<HTMLAudioElement | null>(null);
+  const [isWaveReady, setIsWaveReady] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [recordingDuration, setRecordingDuration] = useState<number | null>(
+    call.durationSeconds ?? null
+  );
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
+
+  const seekToSeconds = useCallback(
+    (targetSeconds: number, shouldPlay: boolean) => {
+      const wave = waveSurferRef.current;
+      const audio = mediaElementRef.current;
+      if (!wave || !audio) return;
+
+      const waveDuration = wave.getDuration();
+      const audioDuration = audio.duration;
+      const referenceDuration =
+        Number.isFinite(waveDuration) && waveDuration > 0
+          ? waveDuration
+          : Number.isFinite(audioDuration) && audioDuration > 0
+          ? audioDuration
+          : null;
+
+      if (!referenceDuration) return;
+
+      const clampedOffset = Math.max(
+        0,
+        Math.min(targetSeconds, referenceDuration)
+      );
+      const relativePosition =
+        referenceDuration > 0 ? clampedOffset / referenceDuration : 0;
+
+      wave.seekTo(relativePosition);
+      audio.currentTime = clampedOffset;
+      setCurrentTime(clampedOffset);
+
+      if (shouldPlay) {
+        wave.play(clampedOffset);
+      } else {
+        wave.pause();
+      }
+    },
+    []
+  );
+
+  const handleTogglePlayback = useCallback(() => {
+    const wave = waveSurferRef.current;
+    if (!wave || !isWaveReady) {
+      return;
+    }
+    if (wave.isPlaying()) {
+      wave.pause();
+    } else {
+      wave.play();
+    }
+  }, [isWaveReady]);
+
+  const handleSeekTo = useCallback(
+    (offset: number | null) => {
+      if (offset === null || Number.isNaN(offset)) {
+        return;
+      }
+      seekToSeconds(offset, true);
+    },
+    [seekToSeconds]
+  );
+
+  const formattedCurrentTime = formatAudioTimestamp(currentTime);
+  const formattedDuration = formatAudioTimestamp(recordingDuration ?? 0);
+  const playbackDisabled = !isWaveReady || !waveSurferRef.current;
+
+  const callTimestampLabel = formatAbsoluteTimestamp(call.startedAt);
+  const relativeLabel = formatRelativeTimestamp(call.startedAt);
+  const durationLabel = formatDuration(call.durationSeconds);
   const timeline = useMemo(
-    () => buildTimeline(call.transcriptMessages),
-    [call.transcriptMessages]
+    () =>
+      buildTimeline(
+        call.transcriptMessages,
+        call.startedAt,
+        call.durationSeconds
+      ),
+    [call.durationSeconds, call.startedAt, call.transcriptMessages]
   );
   const summaryEntries = useMemo(() => extractSummaryEntries(call), [call]);
   const summaryTags = useMemo(
@@ -616,10 +740,198 @@ function SelectedCallDetails({
     [call.summary]
   );
 
-  const callTimestampLabel = formatAbsoluteTimestamp(call.startedAt);
-  const relativeLabel = formatRelativeTimestamp(call.startedAt);
-  const durationLabel = formatDuration(call.durationSeconds);
-  const statusLabel = call.status === "archived" ? "Archived" : call.status;
+  useEffect(() => {
+    setIsWaveReady(false);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setRecordingDuration(call.durationSeconds ?? null);
+    setPlaybackError(null);
+    if (mediaElementRef.current) {
+      mediaElementRef.current.pause();
+      mediaElementRef.current.src = "";
+      mediaElementRef.current.load();
+      mediaElementRef.current = null;
+    }
+  }, [call.durationSeconds, call.id]);
+
+  useEffect(() => {
+    if (!call.recordingUrl || !waveformRef.current) {
+      waveSurferRef.current?.destroy();
+      waveSurferRef.current = null;
+      if (mediaElementRef.current) {
+        mediaElementRef.current.pause();
+        mediaElementRef.current.src = "";
+        mediaElementRef.current.load();
+        mediaElementRef.current = null;
+      }
+      setIsWaveReady(false);
+      setIsPlaying(false);
+      return;
+    }
+
+    const container = waveformRef.current;
+    container.innerHTML = "";
+
+    const audioElement = document.createElement("audio");
+    const backendBaseUrl = import.meta.env.VITE_LARAVEL_URL
+      ? import.meta.env.VITE_LARAVEL_URL.replace(/\/+$/u, "")
+      : null;
+    const storageProxyPrefix = "/storage";
+
+    function resolveRecordingUrl(url: string | null): string | null {
+      if (!url) return null;
+      if (url.startsWith(storageProxyPrefix)) return url;
+      if (url.startsWith("/storage/")) {
+        return `${storageProxyPrefix}${url.slice("/storage".length)}`;
+      }
+
+      if (/^https?:\/\//iu.test(url)) {
+        try {
+          const parsed = new URL(url);
+          if (backendBaseUrl) {
+            const backendOrigin = new URL(backendBaseUrl).origin;
+            if (
+              parsed.origin === backendOrigin &&
+              parsed.pathname.startsWith("/storage/")
+            ) {
+              return `${storageProxyPrefix}${parsed.pathname.slice(
+                "/storage".length
+              )}${parsed.search}${parsed.hash}`;
+            }
+          }
+          return url;
+        } catch {
+          return url;
+        }
+      }
+
+      return url;
+    }
+    const resolvedRecordingUrl = resolveRecordingUrl(call.recordingUrl);
+    if (!resolvedRecordingUrl) {
+      setPlaybackError("Recording unavailable");
+      return;
+    }
+    audioElement.src = resolvedRecordingUrl;
+    audioElement.preload = "auto";
+    audioElement.crossOrigin = "use-credentials";
+    audioElement.controls = false;
+    mediaElementRef.current = audioElement;
+
+    const wave = WaveSurfer.create({
+      container,
+      waveColor: "#d6c7ff",
+      progressColor: "#5a189a",
+      cursorColor: "#5a189a",
+      cursorWidth: 2,
+      height: 96,
+      responsive: true,
+      barWidth: 2,
+      barGap: 1,
+      normalize: true,
+      dragToSeek: true,
+      hideScrollbar: true,
+      backend: "MediaElement",
+      media: audioElement,
+      mediaControls: false,
+    });
+
+    const handleReady = () => {
+      setIsWaveReady(true);
+      setPlaybackError(null);
+      const totalDuration = wave.getDuration();
+      if (Number.isFinite(totalDuration) && totalDuration > 0) {
+        setRecordingDuration(totalDuration);
+      }
+      setCurrentTime(0);
+    };
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    const handleFinish = () => {
+      setIsPlaying(false);
+      setCurrentTime(wave.getDuration());
+    };
+    const handleError = (error: unknown) => {
+      const message =
+        typeof error === "string"
+          ? error
+          : error instanceof Error
+          ? error.message
+          : "Unable to load recording";
+      setPlaybackError(message);
+      setIsWaveReady(false);
+      setIsPlaying(false);
+    };
+
+    const handleInteraction = (relativePosition: number) => {
+      const waveDuration = wave.getDuration();
+      const audioDuration = audioElement.duration;
+      const referenceDuration =
+        Number.isFinite(waveDuration) && waveDuration > 0
+          ? waveDuration
+          : Number.isFinite(audioDuration) && audioDuration > 0
+          ? audioDuration
+          : null;
+      if (!referenceDuration) return;
+      const absoluteSeconds =
+        Math.max(0, Math.min(relativePosition, 1)) * referenceDuration;
+      seekToSeconds(absoluteSeconds, wave.isPlaying());
+    };
+
+    wave.on("ready", handleReady);
+    wave.on("play", handlePlay);
+    wave.on("pause", handlePause);
+    wave.on("finish", handleFinish);
+    wave.on("timeupdate", () => {
+      const nextTime = wave.getCurrentTime();
+      if (Number.isFinite(nextTime)) {
+        setCurrentTime(nextTime);
+      }
+    });
+    wave.on("interaction", handleInteraction);
+    wave.on("error", handleError);
+
+    const handleMediaError = () => {
+      const mediaError = audioElement.error;
+      if (!mediaError) return;
+      handleError(
+        mediaError.message ||
+          `Unable to load recording (code ${mediaError.code})`
+      );
+    };
+
+    const handleMetadata = () => {
+      if (Number.isFinite(audioElement.duration) && audioElement.duration > 0) {
+        setRecordingDuration(audioElement.duration);
+      }
+    };
+
+    audioElement.addEventListener("error", handleMediaError);
+    audioElement.addEventListener("loadedmetadata", handleMetadata);
+    audioElement.load();
+
+    waveSurferRef.current = wave;
+
+    return () => {
+      wave.un("ready", handleReady);
+      wave.un("play", handlePlay);
+      wave.un("pause", handlePause);
+      wave.un("finish", handleFinish);
+      wave.un("interaction", handleInteraction);
+      wave.un("error", handleError);
+      audioElement.removeEventListener("error", handleMediaError);
+      audioElement.removeEventListener("loadedmetadata", handleMetadata);
+      audioElement.pause();
+      audioElement.src = "";
+      audioElement.load();
+      mediaElementRef.current = null;
+      wave.destroy();
+      waveSurferRef.current = null;
+      setIsWaveReady(false);
+      setIsPlaying(false);
+    };
+  }, [call.recordingUrl, seekToSeconds]);
 
   const sections = useMemo<CallDetailSection[]>(() => {
     const items: CallDetailSection[] = [
@@ -649,14 +961,9 @@ function SelectedCallDetails({
             <aside className="selected-call-sidebar">
               <div className="selected-call-sidebar-card">
                 <h4>Caller</h4>
-                <p>{call.callerName ?? "Unknown"}</p>
-                <h4>Business Line</h4>
-                <p>{call.toNumber ?? "—"}</p>
-                <h4>Status</h4>
-                <p>
-                  {statusLabel}
-                  {call.isStarred ? " • Starred" : ""}
-                </p>
+                <p>{resolveCallerName(call) || "Unknown"}</p>
+                <h4>Personal Line</h4>
+                <p>{call.fromNumber ?? "—"}</p>
                 <h4>Duration</h4>
                 <p>{durationLabel}</p>
                 <h4>Starred calls</h4>
@@ -669,18 +976,6 @@ function SelectedCallDetails({
                   View Contact
                 </button>
               </div>
-              {call.recordingUrl ? (
-                <div className="selected-call-recording">
-                  <h4>Call Recording</h4>
-                  <audio
-                    controls
-                    src={call.recordingUrl}
-                    className="call-audio-player"
-                  >
-                    <track kind="captions" />
-                  </audio>
-                </div>
-              ) : null}
             </aside>
           </div>
         ),
@@ -702,26 +997,51 @@ function SelectedCallDetails({
               </div>
             ) : (
               <ol className="selected-call-transcript-timeline">
-                {timeline.map((entry) => (
-                  <li
-                    key={entry.id}
-                    className={
-                      entry.speaker === "agent"
-                        ? "message agent"
-                        : entry.speaker === "caller"
-                        ? "message caller"
-                        : "message"
-                    }
-                  >
-                    <div className="message-content">
-                      <span className="message-speaker">
-                        {entry.speakerLabel}
-                      </span>
-                      <p>{entry.content}</p>
-                    </div>
-                    <time className="message-time">{entry.timestampLabel}</time>
-                  </li>
-                ))}
+                {timeline.map((entry) => {
+                  const audioTimestampLabel =
+                    entry.offsetSeconds !== null
+                      ? formatAudioTimestamp(entry.offsetSeconds)
+                      : entry.timestampLabel;
+                  const isLinkable = entry.offsetSeconds !== null;
+                  return (
+                    <li
+                      key={entry.id}
+                      className={
+                        entry.speaker === "agent"
+                          ? "message agent"
+                          : entry.speaker === "caller"
+                          ? "message caller"
+                          : "message"
+                      }
+                    >
+                      <div
+                        className={
+                          isLinkable
+                            ? "message-content linkable"
+                            : "message-content"
+                        }
+                        role={isLinkable ? "button" : undefined}
+                        tabIndex={isLinkable ? 0 : undefined}
+                        onClick={() => handleSeekTo(entry.offsetSeconds)}
+                        onKeyDown={(event) => {
+                          if (!isLinkable) return;
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            handleSeekTo(entry.offsetSeconds);
+                          }
+                        }}
+                      >
+                        <span className="message-speaker">
+                          {entry.speakerLabel}
+                        </span>
+                        <p>{entry.content}</p>
+                      </div>
+                      <time className="message-time">
+                        {audioTimestampLabel}
+                      </time>
+                    </li>
+                  );
+                })}
               </ol>
             )}
           </div>
@@ -729,28 +1049,15 @@ function SelectedCallDetails({
       },
     ];
 
-    if (call.transcriptText) {
-      items.push({
-        id: "notes",
-        label: "Transcript Notes",
-        content: (
-          <div className="selected-call-transcript-text">
-            <h3>Transcript Notes</h3>
-            <p>{call.transcriptText}</p>
-          </div>
-        ),
-      });
-    }
-
     return items;
   }, [
     call,
     durationLabel,
     starredCount,
-    statusLabel,
     summaryEntries,
     summaryTags,
     timeline,
+    handleSeekTo,
   ]);
 
   const sectionIds = useMemo<CallSectionId[]>(
@@ -936,6 +1243,43 @@ function SelectedCallDetails({
 
   return (
     <div className="selected-call">
+      {call.recordingUrl ? (
+        <div className="call-recording-floating">
+          <div className="call-recording-header">
+            <div>
+              <h4>Call Recording</h4>
+              <span className="call-recording-subtitle">
+                Drag the waveform to review the conversation.
+              </span>
+            </div>
+            <button
+              type="button"
+              className="call-recording-play"
+              onClick={handleTogglePlayback}
+              disabled={playbackDisabled}
+              aria-label={isPlaying ? "Pause recording" : "Play recording"}
+            >
+              {isPlaying ? (
+                <TbPlayerPauseFilled size={22} />
+              ) : (
+                <TbPlayerPlayFilled size={22} />
+              )}
+            </button>
+          </div>
+          <div className="call-recording-visual">
+            <div ref={waveformRef} className="call-recording-wave" />
+          </div>
+          <div className="call-recording-times">
+            <span>{formattedCurrentTime}</span>
+            <span>{formattedDuration}</span>
+          </div>
+          {playbackError ? (
+            <div className="call-recording-error" role="status">
+              {playbackError}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <header className="selected-call-header">
         <div>
           <span>Call started at </span>

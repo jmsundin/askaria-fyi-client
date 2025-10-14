@@ -14,6 +14,10 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_LARAVEL_URL || "http://127.0.0.1:8001",
           changeOrigin: true,
         },
+        "/storage": {
+          target: env.VITE_LARAVEL_URL || "http://127.0.0.1:8001",
+          changeOrigin: true,
+        },
       },
     },
   };

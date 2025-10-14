@@ -1,11 +1,11 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useState,
   type ChangeEvent,
   type CSSProperties,
   type FormEvent,
-  type MouseEvent,
 } from "react";
 import Sidebar from "./components/Sidebar";
 import { authFetch, clearToken, type AuthUser } from "./auth";
@@ -111,11 +111,10 @@ export default function Account() {
     };
   }, []);
 
-  function handleLogout(event: MouseEvent<HTMLAnchorElement>) {
-    event.preventDefault();
+  const handleLogout = useCallback(() => {
     clearToken();
     window.location.href = "/login";
-  }
+  }, []);
 
   const sidebarBusinessLabel = authenticatedUser?.name ?? "AskAria Customer";
 
@@ -130,7 +129,11 @@ export default function Account() {
 
   return (
     <div style={accountPageContainerStyles}>
-      <Sidebar activeItem="account" businessLabel={sidebarBusinessLabel} />
+      <Sidebar
+        activeItem="account"
+        businessLabel={sidebarBusinessLabel}
+        onLogout={handleLogout}
+      />
       <main style={accountMainLayoutStyles}>
         <header
           style={{
@@ -187,18 +190,6 @@ export default function Account() {
                 Manage your user account preferences and settings in one place.
               </p>
             </div>
-            <a
-              href="#logout"
-              onClick={handleLogout}
-              style={{
-                fontWeight: 600,
-                color: "var(--brand-primary)",
-                textDecoration: "none",
-                marginTop: "6px",
-              }}
-            >
-              Log out
-            </a>
           </div>
         </header>
 

@@ -7,7 +7,6 @@ import {
   type ChangeEvent,
   type CSSProperties,
   type KeyboardEvent,
-  type MouseEvent,
 } from "react";
 import Sidebar from "./components/Sidebar";
 import { authFetch, clearToken, type AuthUser } from "./auth";
@@ -312,11 +311,10 @@ export default function QuickStart() {
     useState(false);
   const navigate = useNavigate();
 
-  function handleLogout(event: MouseEvent<HTMLAnchorElement>) {
-    event.preventDefault();
+  const handleLogout = useCallback(() => {
     clearToken();
     window.location.href = "/login";
-  }
+  }, []);
 
   const executeSave = useCallback(
     async (payload: AgentProfilePayload) => {
@@ -1065,29 +1063,12 @@ export default function QuickStart() {
 
   return (
     <div style={quickStartPageContainerStyles}>
-      <Sidebar activeItem="quick-start" businessLabel={sidebarBusinessLabel} />
+      <Sidebar
+        activeItem="quick-start"
+        businessLabel={sidebarBusinessLabel}
+        onLogout={handleLogout}
+      />
       <main style={quickStartMainLayoutStyles}>
-        <div
-          style={{
-            width: "100%",
-            display: "flex",
-            justifyContent: "flex-end",
-            color: "var(--text-secondary)",
-          }}
-        >
-          <a
-            href="#logout"
-            onClick={handleLogout}
-            style={{
-              fontWeight: 600,
-              color: "var(--brand-primary)",
-              textDecoration: "none",
-              marginTop: "6px",
-            }}
-          >
-            Log out
-          </a>
-        </div>
         <nav
           aria-label="Onboarding progress"
           style={{

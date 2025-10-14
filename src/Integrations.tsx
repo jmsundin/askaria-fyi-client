@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import { authFetch, clearToken, type AuthUser } from "./auth";
 
@@ -117,11 +117,10 @@ export default function Integrations() {
     };
   }, []);
 
-  function handleLogout(event: MouseEvent<HTMLAnchorElement>) {
-    event.preventDefault();
+  const handleLogout = useCallback(() => {
     clearToken();
     window.location.href = "/login";
-  }
+  }, []);
 
   const sidebarBusinessLabel = authenticatedUser?.name ?? "AskAria Customer";
 
@@ -141,85 +140,22 @@ export default function Integrations() {
   }, []);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        background: "var(--app-background-gradient)",
-        color: "var(--text-primary)",
-        fontFamily: "inherit",
-      }}
-    >
-      <Sidebar activeItem="integrations" businessLabel={sidebarBusinessLabel} />
-      <main
-        style={{
-          flex: 1,
-          padding: "48px 56px 80px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "40px",
-          height: "100vh",
-          overflowY: "auto",
-          boxSizing: "border-box",
-        }}
-      >
-        <header
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            gap: "24px",
-          }}
-        >
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <span
-              style={{
-                alignSelf: "flex-start",
-                borderRadius: "999px",
-                padding: "6px 16px",
-                backgroundColor: "rgba(124, 58, 237, 0.12)",
-                color: "#5a189a",
-                fontSize: "12px",
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-              }}
-            >
-              Integrations
-            </span>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: "34px",
-                color: "var(--text-heading)",
-              }}
-            >
-              Connect your tools
-            </h1>
-            <p
-              style={{
-                margin: 0,
-                fontSize: "16px",
-                color: "var(--text-secondary)",
-                maxWidth: "540px",
-              }}
-            >
-              Link AskAria with phone systems, CRMs, and automations so callers
-              instantly sync with the systems your team already uses.
+    <div className="integrations-layout">
+      <Sidebar
+        activeItem="integrations"
+        businessLabel={sidebarBusinessLabel}
+        onLogout={handleLogout}
+      />
+      <main className="integrations-main">
+        <header className="integrations-header">
+          <div className="integrations-header-text">
+            <span>Integrations</span>
+            <h1>Connect AskAria with your existing tools.</h1>
+            <p>
+              Automate workflows and sync data between AskAria and the rest of
+              your stack.
             </p>
           </div>
-          <a
-            href="#logout"
-            onClick={handleLogout}
-            style={{
-              fontWeight: 600,
-              color: "var(--brand-primary)",
-              textDecoration: "none",
-              marginTop: "6px",
-            }}
-          >
-            Log out
-          </a>
         </header>
 
         <section

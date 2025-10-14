@@ -99,6 +99,13 @@
 
   --link-color: var(--brand-primary);
   --link-hover-color: #7c3aed;
+
+  --page-max-width: 1200px;
+  --page-gutter: clamp(16px, 5vw, 64px);
+  --section-spacing: clamp(48px, 8vw, 96px);
+  --card-spacing: clamp(18px, 4vw, 32px);
+  --radius-large: 28px;
+  --radius-medium: 20px;
 }
 
 [data-theme="dark"] {
@@ -155,6 +162,19 @@
 
   --link-color: #f472b6;
   --link-hover-color: #d6bcff;
+
+  --page-max-width: 1200px;
+  --page-gutter: clamp(16px, 5vw, 56px);
+  --section-spacing: clamp(48px, 8vw, 96px);
+  --card-spacing: clamp(18px, 4vw, 32px);
+  --radius-large: 28px;
+  --radius-medium: 20px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
@@ -163,11 +183,32 @@ body {
   min-height: 100vh;
   background: var(--surface-page);
   color: var(--text-primary);
+  font-size: clamp(15px, 0.9vw + 14px, 18px);
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+h1 {
+  font-size: clamp(30px, 5vw + 8px, 56px);
+}
+
+h2 {
+  font-size: clamp(24px, 3vw + 10px, 42px);
+}
+
+h3 {
+  font-size: clamp(20px, 2.4vw + 8px, 28px);
 }
 
 #root {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
 }
 
 a {
@@ -183,6 +224,23 @@ a:hover {
 
 button {
   font-family: inherit;
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+main {
+  width: 100%;
+}
+
+@media (max-width: 600px) {
+  body {
+    font-size: clamp(15px, 4vw, 17px);
+  }
 }
 
 .theme-toggle {
