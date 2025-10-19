@@ -1,20 +1,8 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ThemeToggle from "./components/ThemeToggle";
 import "./StaticLanding.css";
 
 function LandingThemeToggle() {
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
-    const current = document.documentElement.dataset.theme;
-    return current === "dark" ? "dark" : "light";
-  });
-
-  useEffect(() => {
-    const root = document.documentElement;
-    root.dataset.theme = theme;
-    root.style.colorScheme = theme;
-  }, [theme]);
-
   return <ThemeToggle />;
 }
 

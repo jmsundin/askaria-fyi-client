@@ -2,17 +2,17 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "./index.css";
-import App from "./App.tsx";
-import Register from "./Register.tsx";
-import Login from "./Login.tsx";
-import Home from "./Home.tsx";
-import QuickStart from "./QuickStart.tsx";
+import App from "./App";
+import Register from "./Register";
+import Login from "./Login";
+import QuickStart from "./QuickStart";
 import QuickStartTest from "./QuickStartTest";
 import QuickStartLaunch from "./QuickStartLaunch";
 import ProtectedRoute from "./ProtectedRoute";
-import Calls from "./Calls.tsx";
+import Calls from "./Calls";
 import Account from "./Account";
 import Integrations from "./Integrations";
+import AgentSettings from "./AgentSettings";
 import { getToken } from "./auth";
 import ThemeProvider from "./components/ThemeProvider";
 import Resources from "./Resources";
@@ -70,7 +70,7 @@ createRoot(rootElement).render(
             />
             <Route path="/app" element={<Calls />} />
             <Route path="/app/calls" element={<Calls />} />
-            <Route path="/app/settings" element={<Home />} />
+            <Route path="/app/settings" element={<AgentSettings />} />
             <Route path="/app/account" element={<Account />} />
             <Route path="/app/integrations" element={<Integrations />} />
           </Route>

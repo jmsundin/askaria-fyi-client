@@ -7,6 +7,10 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    test: {
+      environment: "jsdom",
+      setupFiles: "./vitest.setup.ts",
+    },
     server: {
       port: Number(env.VITE_PORT || 5175),
       proxy: {

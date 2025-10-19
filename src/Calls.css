@@ -16,6 +16,7 @@
 }
 
 .calls-layout {
+  --calls-sticky-offset: clamp(20px, 5vw, 32px);
   flex: 1;
   padding: clamp(24px, 5vw, 40px) clamp(20px, 5vw, 36px) clamp(40px, 8vw, 64px);
   display: flex;
@@ -80,7 +81,9 @@
   display: flex;
   flex-direction: column;
   height: auto;
-  max-height: min(70vh, 720px);
+  max-height: calc(100vh - var(--calls-sticky-offset) - clamp(24px, 5vw, 40px));
+  position: sticky;
+  top: var(--calls-sticky-offset);
 }
 
 .call-list.collapsed {
@@ -341,7 +344,7 @@
 
 .call-recording-floating {
   position: sticky;
-  top: clamp(20px, 5vw, 32px);
+  top: var(--calls-sticky-offset);
   z-index: 10;
   border-radius: 20px;
   border: 1px solid var(--border-strong);
@@ -351,6 +354,12 @@
   display: flex;
   flex-direction: column;
   gap: clamp(14px, 3vw, 18px);
+}
+
+.call-recording-track {
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 3vw, 16px);
 }
 
 .call-recording-header {
@@ -401,6 +410,13 @@
 .call-recording-visual {
   width: 100%;
   position: relative;
+  flex: 1;
+}
+
+.call-recording-visual canvas {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
 }
 
 .call-recording-wave {

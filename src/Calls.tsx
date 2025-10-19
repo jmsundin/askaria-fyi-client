@@ -7,7 +7,6 @@ import {
   type DragEvent,
   type ReactNode,
 } from "react";
-import WaveSurfer from "wavesurfer.js";
 import {
   TbChevronDown,
   TbGripVertical,
@@ -17,6 +16,7 @@ import {
   TbPlayerPlayFilled,
 } from "react-icons/tb";
 import Sidebar from "./components/Sidebar";
+import P5Waveform from "./components/P5Waveform";
 import { authFetch, clearToken, type AuthUser } from "./auth";
 import type {
   CallFilterState,
@@ -445,17 +445,6 @@ export default function Calls() {
         <header className="calls-header">
           <div>
             <h1>Calls</h1>
-            <p>Your AI receptionist’s latest activity and call summaries.</p>
-          </div>
-          <div className="calls-header-actions">
-            <button
-              type="button"
-              className="calls-sync-button"
-              onClick={handleLoadOlderCalls}
-              disabled={loading}
-            >
-              {loading ? "Refreshing..." : "Refresh"}
-            </button>
           </div>
         </header>
 
@@ -648,79 +637,16 @@ function SelectedCallDetails({
   onLayoutChange,
   onPersistLayout,
 }: SelectedCallDetailsProps) {
-  const waveformRef = useRef<HTMLDivElement | null>(null);
-  const waveSurferRef = useRef<WaveSurfer | null>(null);
-  const mediaElementRef = useRef<HTMLAudioElement | null>(null);
-  const [isWaveReady, setIsWaveReady] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [recordingDuration, setRecordingDuration] = useState<number | null>(
-    call.durationSeconds ?? null
-  );
-  const [playbackError, setPlaybackError] = useState<string | null>(null);
-
-  const seekToSeconds = useCallback(
-    (targetSeconds: number, shouldPlay: boolean) => {
-      const wave = waveSurferRef.current;
-      const audio = mediaElementRef.current;
-      if (!wave || !audio) return;
-
-      const waveDuration = wave.getDuration();
-      const audioDuration = audio.duration;
-      const referenceDuration =
-        Number.isFinite(waveDuration) && waveDuration > 0
-          ? waveDuration
-          : Number.isFinite(audioDuration) && audioDuration > 0
-          ? audioDuration
-          : null;
-
-      if (!referenceDuration) return;
-
-      const clampedOffset = Math.max(
-        0,
-        Math.min(targetSeconds, referenceDuration)
-      );
-      const relativePosition =
-        referenceDuration > 0 ? clampedOffset / referenceDuration : 0;
-
-      wave.seekTo(relativePosition);
-      audio.currentTime = clampedOffset;
-      setCurrentTime(clampedOffset);
-
-      if (shouldPlay) {
-        wave.play(clampedOffset);
-      } else {
-        wave.pause();
-      }
-    },
-    []
-  );
-
-  const handleTogglePlayback = useCallback(() => {
-    const wave = waveSurferRef.current;
-    if (!wave || !isWaveReady) {
-      return;
-    }
-    if (wave.isPlaying()) {
-      wave.pause();
-    } else {
-      wave.play();
-    }
-  }, [isWaveReady]);
-
-  const handleSeekTo = useCallback(
-    (offset: number | null) => {
-      if (offset === null || Number.isNaN(offset)) {
-        return;
-      }
-      seekToSeconds(offset, true);
-    },
-    [seekToSeconds]
-  );
-
-  const formattedCurrentTime = formatAudioTimestamp(currentTime);
-  const formattedDuration = formatAudioTimestamp(recordingDuration ?? 0);
-  const playbackDisabled = !isWaveReady || !waveSurferRef.current;
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const playButtonRef = useRef<HTMLButtonElement | null>(null);
+  const playIconRef = useRef<HTMLSpanElement | null>(null);
+  const pauseIconRef = useRef<HTMLSpanElement | null>(null);
+  const playButtonLabelRef = useRef<HTMLSpanElement | null>(null);
+  const currentTimeRef = useRef<HTMLSpanElement | null>(null);
+  const durationRef = useRef<HTMLSpanElement | null>(null);
+  const playbackErrorRef = useRef<HTMLDivElement | null>(null);
+  const isReadyRef = useRef(false);
+  const [isAudioReady, setIsAudioReady] = useState(false);
 
   const callTimestampLabel = formatAbsoluteTimestamp(call.startedAt);
   const relativeLabel = formatRelativeTimestamp(call.startedAt);
@@ -740,51 +666,139 @@ function SelectedCallDetails({
     [call.summary]
   );
 
-  useEffect(() => {
-    setIsWaveReady(false);
-    setIsPlaying(false);
-    setCurrentTime(0);
-    setRecordingDuration(call.durationSeconds ?? null);
-    setPlaybackError(null);
-    if (mediaElementRef.current) {
-      mediaElementRef.current.pause();
-      mediaElementRef.current.src = "";
-      mediaElementRef.current.load();
-      mediaElementRef.current = null;
+  const applyPlaybackVisualState = useCallback((isPlaying: boolean) => {
+    if (playButtonRef.current) {
+      playButtonRef.current.setAttribute(
+        "aria-label",
+        isPlaying ? "Pause recording" : "Play recording"
+      );
     }
-  }, [call.durationSeconds, call.id]);
+    if (playIconRef.current) {
+      playIconRef.current.style.display = isPlaying ? "none" : "";
+    }
+    if (pauseIconRef.current) {
+      pauseIconRef.current.style.display = isPlaying ? "" : "none";
+    }
+    if (playButtonLabelRef.current) {
+      playButtonLabelRef.current.textContent = isPlaying
+        ? "Pause recording"
+        : "Play recording";
+    }
+  }, []);
 
-  useEffect(() => {
-    if (!call.recordingUrl || !waveformRef.current) {
-      waveSurferRef.current?.destroy();
-      waveSurferRef.current = null;
-      if (mediaElementRef.current) {
-        mediaElementRef.current.pause();
-        mediaElementRef.current.src = "";
-        mediaElementRef.current.load();
-        mediaElementRef.current = null;
+  const updateCurrentTimeLabel = useCallback((seconds: number) => {
+    if (currentTimeRef.current) {
+      currentTimeRef.current.textContent = formatAudioTimestamp(
+        Number.isFinite(seconds) ? seconds : 0
+      );
+    }
+  }, []);
+
+  const updateDurationLabel = useCallback((seconds: number | null) => {
+    if (durationRef.current) {
+      const safeSeconds =
+        seconds !== null && Number.isFinite(seconds) && seconds > 0
+          ? seconds
+          : 0;
+      durationRef.current.textContent = formatAudioTimestamp(safeSeconds);
+    }
+  }, []);
+
+  const showPlaybackError = useCallback((message: string | null) => {
+    const element = playbackErrorRef.current;
+    if (!element) return;
+    if (message) {
+      element.textContent = message;
+      element.removeAttribute("hidden");
+    } else {
+      element.textContent = "";
+      element.setAttribute("hidden", "true");
+    }
+  }, []);
+
+  const seekToSeconds = useCallback(
+    (targetSeconds: number, shouldPlay: boolean) => {
+      const audio = audioRef.current;
+      if (!audio) return;
+
+      const audioDuration = audio.duration;
+      if (!Number.isFinite(audioDuration) || audioDuration <= 0) return;
+
+      const clampedSeconds = Math.max(
+        0,
+        Math.min(targetSeconds, audioDuration)
+      );
+
+      if (audio.readyState >= 1) {
+        audio.currentTime = clampedSeconds;
       }
-      setIsWaveReady(false);
-      setIsPlaying(false);
+      updateCurrentTimeLabel(clampedSeconds);
+
+      if (shouldPlay) {
+        audio.play();
+      } else {
+        audio.pause();
+      }
+      applyPlaybackVisualState(!audio.paused);
+    },
+    [applyPlaybackVisualState, updateCurrentTimeLabel]
+  );
+
+  const handleTranscriptMessageActivate = useCallback(
+    (offset: number | null) => {
+      if (offset === null || Number.isNaN(offset)) {
+        return;
+      }
+      const audio = audioRef.current;
+      const shouldResume = audio ? !audio.paused : false;
+      seekToSeconds(offset, shouldResume);
+    },
+    [seekToSeconds]
+  );
+
+  const handleTogglePlayback = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio || !isReadyRef.current) {
       return;
     }
+    if (audio.paused) {
+      audio.play().catch((error) => {
+        console.error("Failed to play audio:", error);
+        showPlaybackError(`Failed to play: ${error.message}`);
+      });
+    } else {
+      audio.pause();
+    }
+  }, [showPlaybackError]);
 
-    const container = waveformRef.current;
-    container.innerHTML = "";
+  useEffect(() => {
+    applyPlaybackVisualState(false);
+    updateCurrentTimeLabel(0);
+    updateDurationLabel(call.durationSeconds ?? null);
+    showPlaybackError(null);
+    isReadyRef.current = false;
+    setIsAudioReady(false);
+  }, [
+    call.id,
+    call.durationSeconds,
+    applyPlaybackVisualState,
+    showPlaybackError,
+    updateCurrentTimeLabel,
+    updateDurationLabel,
+  ]);
 
-    const audioElement = document.createElement("audio");
-    const backendBaseUrl = import.meta.env.VITE_LARAVEL_URL
-      ? import.meta.env.VITE_LARAVEL_URL.replace(/\/+$/u, "")
-      : null;
-    const storageProxyPrefix = "/storage";
-
-    function resolveRecordingUrl(url: string | null): string | null {
+  const resolveRecordingUrl = useCallback(
+    (url: string | null): string | null => {
       if (!url) return null;
+      const backendBaseUrl = import.meta.env.VITE_LARAVEL_URL
+        ? import.meta.env.VITE_LARAVEL_URL.replace(/\/+$/u, "")
+        : null;
+      const storageProxyPrefix = "/storage";
+
       if (url.startsWith(storageProxyPrefix)) return url;
       if (url.startsWith("/storage/")) {
         return `${storageProxyPrefix}${url.slice("/storage".length)}`;
       }
-
       if (/^https?:\/\//iu.test(url)) {
         try {
           const parsed = new URL(url);
@@ -804,134 +818,50 @@ function SelectedCallDetails({
           return url;
         }
       }
-
       return url;
-    }
-    const resolvedRecordingUrl = resolveRecordingUrl(call.recordingUrl);
-    if (!resolvedRecordingUrl) {
-      setPlaybackError("Recording unavailable");
-      return;
-    }
-    audioElement.src = resolvedRecordingUrl;
-    audioElement.preload = "auto";
-    audioElement.crossOrigin = "use-credentials";
-    audioElement.controls = false;
-    mediaElementRef.current = audioElement;
+    },
+    []
+  );
 
-    const wave = WaveSurfer.create({
-      container,
-      waveColor: "#d6c7ff",
-      progressColor: "#5a189a",
-      cursorColor: "#5a189a",
-      cursorWidth: 2,
-      height: 96,
-      responsive: true,
-      barWidth: 2,
-      barGap: 1,
-      normalize: true,
-      dragToSeek: true,
-      hideScrollbar: true,
-      backend: "MediaElement",
-      media: audioElement,
-      mediaControls: false,
-    });
+  const handleWaveformReady = useCallback(() => {
+    isReadyRef.current = true;
+    setIsAudioReady(true);
+    applyPlaybackVisualState(false);
+    showPlaybackError(null);
+  }, [applyPlaybackVisualState, showPlaybackError]);
 
-    const handleReady = () => {
-      setIsWaveReady(true);
-      setPlaybackError(null);
-      const totalDuration = wave.getDuration();
-      if (Number.isFinite(totalDuration) && totalDuration > 0) {
-        setRecordingDuration(totalDuration);
+  const handleWaveformPlay = useCallback(() => {
+    applyPlaybackVisualState(true);
+  }, [applyPlaybackVisualState]);
+
+  const handleWaveformPause = useCallback(() => {
+    applyPlaybackVisualState(false);
+  }, [applyPlaybackVisualState]);
+
+  const handleWaveformTimeUpdate = useCallback(
+    (currentTime: number) => {
+      updateCurrentTimeLabel(currentTime);
+    },
+    [updateCurrentTimeLabel]
+  );
+
+  const handleWaveformDurationChange = useCallback(
+    (duration: number) => {
+      updateDurationLabel(duration);
+    },
+    [updateDurationLabel]
+  );
+
+  const handleWaveformError = useCallback(
+    (error: string) => {
+      showPlaybackError(error);
+      applyPlaybackVisualState(false);
+      if (playButtonRef.current) {
+        playButtonRef.current.disabled = true;
       }
-      setCurrentTime(0);
-    };
-
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
-    const handleFinish = () => {
-      setIsPlaying(false);
-      setCurrentTime(wave.getDuration());
-    };
-    const handleError = (error: unknown) => {
-      const message =
-        typeof error === "string"
-          ? error
-          : error instanceof Error
-          ? error.message
-          : "Unable to load recording";
-      setPlaybackError(message);
-      setIsWaveReady(false);
-      setIsPlaying(false);
-    };
-
-    const handleInteraction = (relativePosition: number) => {
-      const waveDuration = wave.getDuration();
-      const audioDuration = audioElement.duration;
-      const referenceDuration =
-        Number.isFinite(waveDuration) && waveDuration > 0
-          ? waveDuration
-          : Number.isFinite(audioDuration) && audioDuration > 0
-          ? audioDuration
-          : null;
-      if (!referenceDuration) return;
-      const absoluteSeconds =
-        Math.max(0, Math.min(relativePosition, 1)) * referenceDuration;
-      seekToSeconds(absoluteSeconds, wave.isPlaying());
-    };
-
-    wave.on("ready", handleReady);
-    wave.on("play", handlePlay);
-    wave.on("pause", handlePause);
-    wave.on("finish", handleFinish);
-    wave.on("timeupdate", () => {
-      const nextTime = wave.getCurrentTime();
-      if (Number.isFinite(nextTime)) {
-        setCurrentTime(nextTime);
-      }
-    });
-    wave.on("interaction", handleInteraction);
-    wave.on("error", handleError);
-
-    const handleMediaError = () => {
-      const mediaError = audioElement.error;
-      if (!mediaError) return;
-      handleError(
-        mediaError.message ||
-          `Unable to load recording (code ${mediaError.code})`
-      );
-    };
-
-    const handleMetadata = () => {
-      if (Number.isFinite(audioElement.duration) && audioElement.duration > 0) {
-        setRecordingDuration(audioElement.duration);
-      }
-    };
-
-    audioElement.addEventListener("error", handleMediaError);
-    audioElement.addEventListener("loadedmetadata", handleMetadata);
-    audioElement.load();
-
-    waveSurferRef.current = wave;
-
-    return () => {
-      wave.un("ready", handleReady);
-      wave.un("play", handlePlay);
-      wave.un("pause", handlePause);
-      wave.un("finish", handleFinish);
-      wave.un("interaction", handleInteraction);
-      wave.un("error", handleError);
-      audioElement.removeEventListener("error", handleMediaError);
-      audioElement.removeEventListener("loadedmetadata", handleMetadata);
-      audioElement.pause();
-      audioElement.src = "";
-      audioElement.load();
-      mediaElementRef.current = null;
-      wave.destroy();
-      waveSurferRef.current = null;
-      setIsWaveReady(false);
-      setIsPlaying(false);
-    };
-  }, [call.recordingUrl, seekToSeconds]);
+    },
+    [applyPlaybackVisualState, showPlaybackError]
+  );
 
   const sections = useMemo<CallDetailSection[]>(() => {
     const items: CallDetailSection[] = [
@@ -1022,12 +952,16 @@ function SelectedCallDetails({
                         }
                         role={isLinkable ? "button" : undefined}
                         tabIndex={isLinkable ? 0 : undefined}
-                        onClick={() => handleSeekTo(entry.offsetSeconds)}
+                        onClick={() =>
+                          handleTranscriptMessageActivate(entry.offsetSeconds)
+                        }
                         onKeyDown={(event) => {
                           if (!isLinkable) return;
                           if (event.key === "Enter" || event.key === " ") {
                             event.preventDefault();
-                            handleSeekTo(entry.offsetSeconds);
+                            handleTranscriptMessageActivate(
+                              entry.offsetSeconds
+                            );
                           }
                         }}
                       >
@@ -1057,7 +991,7 @@ function SelectedCallDetails({
     summaryEntries,
     summaryTags,
     timeline,
-    handleSeekTo,
+    handleTranscriptMessageActivate,
   ]);
 
   const sectionIds = useMemo<CallSectionId[]>(
@@ -1241,43 +1175,66 @@ function SelectedCallDetails({
     setActiveDropTarget(null);
   }, []);
 
+  const resolvedRecordingUrl = call.recordingUrl
+    ? resolveRecordingUrl(call.recordingUrl)
+    : null;
+
   return (
     <div className="selected-call">
-      {call.recordingUrl ? (
+      {resolvedRecordingUrl ? (
         <div className="call-recording-floating">
-          <div className="call-recording-header">
-            <div>
-              <h4>Call Recording</h4>
-              <span className="call-recording-subtitle">
-                Drag the waveform to review the conversation.
-              </span>
-            </div>
+          <div className="call-recording-track">
             <button
               type="button"
               className="call-recording-play"
               onClick={handleTogglePlayback}
-              disabled={playbackDisabled}
-              aria-label={isPlaying ? "Pause recording" : "Play recording"}
+              ref={playButtonRef}
+              aria-label="Play recording"
+              disabled={!isAudioReady}
             >
-              {isPlaying ? (
-                <TbPlayerPauseFilled size={22} />
-              ) : (
+              <span aria-hidden="true" ref={playIconRef}>
                 <TbPlayerPlayFilled size={22} />
-              )}
+              </span>
+              <span
+                aria-hidden="true"
+                ref={pauseIconRef}
+                style={{ display: "none" }}
+              >
+                <TbPlayerPauseFilled size={22} />
+              </span>
+              <span className="sr-only" ref={playButtonLabelRef}>
+                Play recording
+              </span>
             </button>
-          </div>
-          <div className="call-recording-visual">
-            <div ref={waveformRef} className="call-recording-wave" />
+            <div className="call-recording-visual">
+              <P5Waveform
+                audioUrl={resolvedRecordingUrl}
+                audioRef={audioRef}
+                height={96}
+                waveColor="#d6c7ff"
+                progressColor="#5a189a"
+                cursorColor="#5a189a"
+                onReady={handleWaveformReady}
+                onPlay={handleWaveformPlay}
+                onPause={handleWaveformPause}
+                onTimeUpdate={handleWaveformTimeUpdate}
+                onDurationChange={handleWaveformDurationChange}
+                onError={handleWaveformError}
+              />
+            </div>
           </div>
           <div className="call-recording-times">
-            <span>{formattedCurrentTime}</span>
-            <span>{formattedDuration}</span>
+            <span ref={currentTimeRef}>{formatAudioTimestamp(0)}</span>
+            <span ref={durationRef}>
+              {formatAudioTimestamp(call.durationSeconds ?? 0)}
+            </span>
           </div>
-          {playbackError ? (
-            <div className="call-recording-error" role="status">
-              {playbackError}
-            </div>
-          ) : null}
+          <div
+            ref={playbackErrorRef}
+            className="call-recording-error"
+            role="status"
+            hidden
+          />
         </div>
       ) : null}
       <header className="selected-call-header">
