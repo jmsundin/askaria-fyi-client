@@ -7,7 +7,7 @@ interface P5WaveformProps {
   progressColor?: string;
   cursorColor?: string;
   height?: number;
-  audioRef?: React.MutableRefObject<HTMLAudioElement | null>;
+  audioRef?: React.RefObject<HTMLAudioElement | null>;
   onReady?: () => void;
   onPlay?: () => void;
   onPause?: () => void;
@@ -60,12 +60,7 @@ export default function P5Waveform({
   });
 
   useEffect(() => {
-    console.log("P5Waveform: useEffect triggered", {
-      audioUrl,
-      hasContainer: !!containerRef.current,
-    });
     if (!containerRef.current) {
-      console.warn("P5Waveform: No container ref, returning early");
       return;
     }
 
@@ -75,17 +70,12 @@ export default function P5Waveform({
 
     const sketch = (p: p5) => {
       p.setup = () => {
-        console.log("P5Waveform: p5 setup starting");
         const canvas = p.createCanvas(
           containerRef.current?.clientWidth || 800,
           height
         );
         canvas.parent(containerRef.current!);
         p.noLoop();
-        console.log("P5Waveform: Canvas created", {
-          width: canvas.width,
-          height: canvas.height,
-        });
 
         // Initial draw to show canvas is working
         p.redraw();
@@ -95,30 +85,12 @@ export default function P5Waveform({
         audio.crossOrigin = "use-credentials";
         audio.preload = "auto"; // Force full preload
         audioRef.current = audio;
-        console.log("P5Waveform: Audio element created and assigned to ref");
-
-        // Add progress event to monitor buffering
-        audio.addEventListener("progress", () => {
-          if (audio!.seekable.length > 0) {
-            console.log(
-              "P5Waveform: Buffering progress - seekable:",
-              audio!.seekable.end(0),
-              "/",
-              audio!.duration
-            );
-          }
-        });
 
         // Load audio and generate waveform
         audio.addEventListener("loadedmetadata", async () => {
-          console.log(
-            "P5Waveform: Audio metadata loaded, duration:",
-            audio!.duration
-          );
           try {
             await generateWaveformData();
             isReadyRef.current = true;
-            console.log("P5Waveform: Waveform generated, calling onReady");
             p.redraw(); // Force redraw to show the waveform
             onReadyRef.current?.();
             if (onDurationChangeRef.current) {
@@ -127,7 +99,6 @@ export default function P5Waveform({
           } catch (error) {
             const message =
               error instanceof Error ? error.message : "Failed to load audio";
-            console.error("P5Waveform: Error generating waveform:", message);
             onErrorRef.current?.(message);
           }
         });
@@ -136,16 +107,7 @@ export default function P5Waveform({
           const errorMessage = audio?.error
             ? `Audio error (code ${audio.error.code}): ${audio.error.message}`
             : "Failed to load audio";
-          console.error("P5Waveform: Audio error event fired", errorMessage);
           onErrorRef.current?.(errorMessage);
-        });
-
-        audio.addEventListener("canplay", () => {
-          console.log("P5Waveform: Audio can play");
-        });
-
-        audio.addEventListener("loadstart", () => {
-          console.log("P5Waveform: Audio load started");
         });
 
         audio.addEventListener("play", () => {
@@ -170,7 +132,6 @@ export default function P5Waveform({
           }
         });
 
-        console.log("P5Waveform: Setting audio source:", audioUrl);
         audio.src = audioUrl;
         audio.load();
       };
@@ -233,20 +194,7 @@ export default function P5Waveform({
           p.stroke(100);
           p.strokeWeight(1);
           p.line(0, height / 2, p.width, height / 2);
-          if (!hasLoggedDrawRef.current) {
-            console.log("P5Waveform: Drawing placeholder line (not ready)");
-          }
           return;
-        }
-
-        if (!hasLoggedDrawRef.current) {
-          console.log("P5Waveform: Drawing waveform", {
-            dataLength: waveformDataRef.current.length,
-            canvasWidth: p.width,
-            audioTime: audio?.currentTime,
-            audioDuration: audio?.duration,
-          });
-          hasLoggedDrawRef.current = true;
         }
 
         const waveformData = waveformDataRef.current;
@@ -309,12 +257,13 @@ export default function P5Waveform({
           if (
             !currentAudio ||
             !currentAudio.duration ||
-            currentAudio.readyState < 1
+            currentAudio.readyState < 2
           ) {
-            console.warn("P5Waveform: Audio not ready for interaction", {
+            console.warn("P5Waveform: Audio not ready for seeking", {
               hasAudio: !!currentAudio,
               duration: currentAudio?.duration,
               readyState: currentAudio?.readyState,
+              networkState: currentAudio?.networkState,
             });
             isDraggingRef.current = false;
             return;
@@ -344,14 +293,21 @@ export default function P5Waveform({
             Math.min(newTime, currentAudio.duration)
           );
 
-          console.log(
-            "P5Waveform: Seeking from:",
-            currentAudio.currentTime,
-            "to:",
-            clampedTime
-          );
+          try {
+            const previousTime = currentAudio.currentTime;
+            currentAudio.currentTime = clampedTime;
 
-          currentAudio.currentTime = clampedTime;
+            console.log("P5Waveform: After seek assignment", {
+              requested: clampedTime,
+              actualCurrentTime: currentAudio.currentTime,
+              previousTime,
+              seeking: currentAudio.seeking,
+            });
+          } catch (error) {
+            console.error("P5Waveform: Error setting currentTime:", error);
+            isDraggingRef.current = false;
+            return;
+          }
 
           onTimeUpdateRef.current?.(clampedTime);
           p.redraw();
@@ -364,7 +320,7 @@ export default function P5Waveform({
         if (
           !currentAudio ||
           !currentAudio.duration ||
-          currentAudio.readyState < 1
+          currentAudio.readyState < 2
         )
           return;
 
@@ -402,20 +358,10 @@ export default function P5Waveform({
             return;
           }
 
-          console.log("P5Waveform: Mouse released", {
-            wasPlaying: wasPlayingBeforeDragRef.current,
-            currentTime: currentAudio.currentTime,
-            readyState: currentAudio.readyState,
-          });
-
           // If audio was playing when we started dragging, resume playback
           if (wasPlayingBeforeDragRef.current) {
             // Wait for seek to complete before resuming playback
             const resumePlayback = () => {
-              console.log(
-                "P5Waveform: Resuming playback from",
-                currentAudio!.currentTime
-              );
               currentAudio!
                 .play()
                 .catch((err) =>
@@ -425,9 +371,6 @@ export default function P5Waveform({
 
             // If audio is currently seeking, wait for it to complete
             if (currentAudio.seeking) {
-              console.log(
-                "P5Waveform: Audio is seeking, waiting for seeked event"
-              );
               currentAudio.addEventListener("seeked", resumePlayback, {
                 once: true,
               });

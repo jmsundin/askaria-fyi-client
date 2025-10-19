@@ -17,7 +17,7 @@ import {
 } from "react-icons/tb";
 import Sidebar from "./components/Sidebar";
 import P5Waveform from "./components/P5Waveform";
-import { authFetch, clearToken, type AuthUser } from "./auth";
+import { authFetch, clearToken, getToken, type AuthUser } from "./auth";
 import type {
   CallFilterState,
   CallLayoutPreferences,
@@ -793,13 +793,16 @@ function SelectedCallDetails({
       const backendBaseUrl = import.meta.env.VITE_LARAVEL_URL
         ? import.meta.env.VITE_LARAVEL_URL.replace(/\/+$/u, "")
         : null;
-      const storageProxyPrefix = "/storage";
+      const storageProxyPrefix = "/api-storage";
+      const token = getToken();
 
-      if (url.startsWith(storageProxyPrefix)) return url;
-      if (url.startsWith("/storage/")) {
-        return `${storageProxyPrefix}${url.slice("/storage".length)}`;
-      }
-      if (/^https?:\/\//iu.test(url)) {
+      let resolvedUrl: string | null = null;
+
+      if (url.startsWith(storageProxyPrefix)) {
+        resolvedUrl = url;
+      } else if (url.startsWith("/storage/")) {
+        resolvedUrl = `${storageProxyPrefix}${url.slice("/storage".length)}`;
+      } else if (/^https?:\/\//iu.test(url)) {
         try {
           const parsed = new URL(url);
           if (backendBaseUrl) {
@@ -808,17 +811,31 @@ function SelectedCallDetails({
               parsed.origin === backendOrigin &&
               parsed.pathname.startsWith("/storage/")
             ) {
-              return `${storageProxyPrefix}${parsed.pathname.slice(
+              resolvedUrl = `${storageProxyPrefix}${parsed.pathname.slice(
                 "/storage".length
               )}${parsed.search}${parsed.hash}`;
+            } else {
+              resolvedUrl = url;
             }
+          } else {
+            resolvedUrl = url;
           }
-          return url;
         } catch {
-          return url;
+          resolvedUrl = url;
         }
+      } else {
+        resolvedUrl = url;
       }
-      return url;
+
+      // Append auth token as query parameter for authenticated requests
+      if (resolvedUrl && token) {
+        const separator = resolvedUrl.includes("?") ? "&" : "?";
+        resolvedUrl = `${resolvedUrl}${separator}token=${encodeURIComponent(
+          token
+        )}`;
+      }
+
+      return resolvedUrl;
     },
     []
   );
