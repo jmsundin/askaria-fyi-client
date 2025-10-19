@@ -6,12 +6,10 @@ import {
   useState,
   type ChangeEvent,
   type CSSProperties,
-  type KeyboardEvent,
 } from "react";
 import Sidebar from "./components/Sidebar";
 import { authFetch, clearToken, type AuthUser } from "./auth";
 import { debounce } from "lodash-es";
-import { useNavigate } from "react-router-dom";
 
 type AgentProfileFaqEntry = {
   question: string;
@@ -252,8 +250,6 @@ const CUSTOMIZE_ONBOARDING_STEPS = [
 ];
 
 const BUSINESS_OVERVIEW_CHARACTER_LIMIT = 500;
-const TOTAL_FORM_STEPS = 4;
-const MAX_RENDERED_FORM_STEP = 4;
 const FORM_FIELD_BACKGROUND_COLOR = "var(--surface-highlight)";
 const FORM_FIELD_BORDER_COLOR = "var(--border-strong)";
 const FORM_FIELD_ERROR_BORDER_COLOR = "var(--text-negative)";
@@ -271,34 +267,32 @@ export default function QuickStart() {
   const [businessPhoneNumber, setBusinessPhoneNumber] = useState("");
   const [businessOverview, setBusinessOverview] = useState("");
   const [hasLoadedProfile, setHasLoadedProfile] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [didFailSave, setDidFailSave] = useState(false);
+  const [, setIsSaving] = useState(false);
+  const [, setDidFailSave] = useState(false);
   const [isBusinessNameTouched, setIsBusinessNameTouched] = useState(false);
   const [isBusinessPhoneNumberTouched, setIsBusinessPhoneNumberTouched] =
     useState(false);
   const [isBusinessOverviewTouched, setIsBusinessOverviewTouched] =
     useState(false);
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
-  const [activeFormStep, setActiveFormStep] = useState(1);
+  const [activeFormStep] = useState(1);
   const [coreServices, setCoreServices] = useState<string[]>([]);
   const [faqEntries, setFaqEntries] = useState<AgentProfileFaqEntry[]>([]);
-  const [coreServiceInputValue, setCoreServiceInputValue] = useState("");
   const [greetingDraft, setGreetingDraft] = useState(DEFAULT_GREETING_MESSAGE);
-  const [isEditingGreeting, setIsEditingGreeting] = useState(false);
-  const [greetingStatus, setGreetingStatus] = useState<
-    "idle" | "saving" | "saved" | "error"
-  >("idle");
+  const [isEditingGreeting] = useState(false);
+  const [, setGreetingStatus] = useState<"idle" | "saving" | "saved" | "error">(
+    "idle"
+  );
   const [greetingOriginal, setGreetingOriginal] = useState(
     DEFAULT_GREETING_MESSAGE
   );
   const [didChangeGreeting, setDidChangeGreeting] = useState(false);
-  const [coreServicesErrorMessage, setCoreServicesErrorMessage] = useState("");
-  const [coreServicesStatus, setCoreServicesStatus] = useState<
+  const [, setCoreServicesStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
-  const [faqStatus, setFaqStatus] = useState<
-    "idle" | "saving" | "saved" | "error"
-  >("idle");
+  const [, setFaqStatus] = useState<"idle" | "saving" | "saved" | "error">(
+    "idle"
+  );
   const coreServicesAbortControllerRef = useRef<AbortController | null>(null);
   const faqAbortControllerRef = useRef<AbortController | null>(null);
   const greetingAbortControllerRef = useRef<AbortController | null>(null);
@@ -307,9 +301,7 @@ export default function QuickStart() {
   const activeFormStepRef = useRef(1);
   const saveSuccessTimeoutRef = useRef<number | null>(null);
   const lastPersistedPayloadRef = useRef<AgentProfilePayload | null>(null);
-  const [hasPendingProfileChanges, setHasPendingProfileChanges] =
-    useState(false);
-  const navigate = useNavigate();
+  const [, setHasPendingProfileChanges] = useState(false);
 
   const handleLogout = useCallback(() => {
     clearToken();
@@ -373,7 +365,7 @@ export default function QuickStart() {
         }
       }
     },
-    [coreServices, faqEntries]
+    [coreServices]
   );
 
   const debouncedSaveAgentProfile = useMemo(
@@ -734,40 +726,6 @@ export default function QuickStart() {
     await executeSave(payload);
   }
 
-  function handleCancel() {
-    const lastPersistedPayload = lastPersistedPayloadRef.current;
-    if (lastPersistedPayload) {
-      setBusinessName(lastPersistedPayload.businessName);
-      setBusinessPhoneNumber(lastPersistedPayload.businessPhoneNumber);
-      setBusinessOverview(lastPersistedPayload.businessOverview);
-      setCoreServices(lastPersistedPayload.coreServices);
-      setFaqEntries(lastPersistedPayload.faqEntries);
-      setGreetingDraft(lastPersistedPayload.greeting);
-    } else {
-      setBusinessName(user?.name ?? "");
-      setBusinessPhoneNumber("");
-      setBusinessOverview("");
-      setCoreServices([]);
-      setFaqEntries([]);
-      setGreetingDraft(DEFAULT_GREETING_MESSAGE);
-    }
-    setHasAttemptedSubmit(false);
-    setIsBusinessNameTouched(false);
-    setIsBusinessPhoneNumberTouched(false);
-    setIsBusinessOverviewTouched(false);
-    setDidFailSave(false);
-    setActiveFormStep(1);
-    setCoreServices([]);
-    setCoreServiceInputValue("");
-    setCoreServicesErrorMessage("");
-    setCoreServicesStatus("idle");
-    setFaqStatus("idle");
-    setHasPendingProfileChanges(false);
-    setGreetingStatus("idle");
-    setIsEditingGreeting(false);
-    greetingAbortControllerRef.current?.abort();
-  }
-
   function handleBusinessNameChange(event: ChangeEvent<HTMLInputElement>) {
     setBusinessName(event.target.value);
     if (activeFormStep === 1) {
@@ -796,180 +754,9 @@ export default function QuickStart() {
     }
   }
 
-  const normalizedCoreServiceDraft = coreServiceInputValue.trim();
-
-  function commitCoreService() {
-    if (normalizedCoreServiceDraft === "") {
-      setCoreServicesErrorMessage("Service name is required");
-      return;
-    }
-    if (coreServices.includes(normalizedCoreServiceDraft)) {
-      setCoreServicesErrorMessage("Service already added");
-      return;
-    }
-    const updatedServices = [...coreServices, normalizedCoreServiceDraft];
-    setCoreServices(updatedServices);
-    setCoreServiceInputValue("");
-    setCoreServicesErrorMessage("");
-    setCoreServicesStatus("saving");
-    debouncedSaveCoreServices(updatedServices);
-  }
-
-  function handleCoreServicesInputChange(event: ChangeEvent<HTMLInputElement>) {
-    setCoreServiceInputValue(event.target.value);
-    setCoreServicesErrorMessage("");
-  }
-
-  function handleCoreServicesKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      commitCoreService();
-      return;
-    }
-    if (
-      event.key === "Backspace" &&
-      coreServiceInputValue === "" &&
-      coreServices.length > 0
-    ) {
-      const updatedServices = coreServices.slice(0, coreServices.length - 1);
-      setCoreServices(updatedServices);
-      setCoreServicesStatus("saving");
-      debouncedSaveCoreServices(updatedServices);
-    }
-  }
-
-  function handleRemoveCoreService(service: string) {
-    const updatedServices = coreServices.filter(
-      (existingService) => existingService !== service
-    );
-    setCoreServices(updatedServices);
-    setCoreServicesStatus("saving");
-    debouncedSaveCoreServices(updatedServices);
-  }
-
-  function handleAddCoreService() {
-    commitCoreService();
-  }
-
-  function handleAddFaqEntry() {
-    setFaqEntries((previousEntries) => [
-      ...previousEntries,
-      { question: "", answer: "" },
-    ]);
-    setFaqStatus("idle");
-  }
-
-  function handleRemoveFaqEntry(indexToRemove: number) {
-    setFaqEntries((previousEntries) => {
-      const nextEntries = previousEntries.filter(
-        (_, entryIndex) => entryIndex !== indexToRemove
-      );
-      debouncedSaveFaq(nextEntries);
-      return nextEntries;
-    });
-  }
-
-  function handleFaqQuestionChange(
-    indexToUpdate: number,
-    event: ChangeEvent<HTMLInputElement>
-  ) {
-    const { value } = event.target;
-    setFaqEntries((previousEntries) => {
-      const nextEntries = previousEntries.map((entry, entryIndex) =>
-        entryIndex === indexToUpdate ? { ...entry, question: value } : entry
-      );
-      setFaqStatus("saving");
-      debouncedSaveFaq(nextEntries);
-      return nextEntries;
-    });
-  }
-
-  function handleFaqAnswerChange(
-    indexToUpdate: number,
-    event: ChangeEvent<HTMLTextAreaElement>
-  ) {
-    const { value } = event.target;
-    setFaqEntries((previousEntries) => {
-      const nextEntries = previousEntries.map((entry, entryIndex) =>
-        entryIndex === indexToUpdate ? { ...entry, answer: value } : entry
-      );
-      setFaqStatus("saving");
-      debouncedSaveFaq(nextEntries);
-      return nextEntries;
-    });
-  }
-
-  function handleGoToNextStep() {
-    if (activeFormStep >= MAX_RENDERED_FORM_STEP) {
-      navigate("/app/quick-start/launch");
-      return;
-    }
-    if (activeFormStep === 3) {
-      navigate("/app/quick-start/test");
-      return;
-    }
-    if (activeFormStep === 1) {
-      if ((hasPendingProfileChanges && !didFailSave) || isSaving) {
-        return;
-      }
-      setActiveFormStep((previousStep) =>
-        Math.min(previousStep + 1, MAX_RENDERED_FORM_STEP)
-      );
-      setHasAttemptedSubmit(false);
-      setIsBusinessNameTouched(false);
-      setIsBusinessPhoneNumberTouched(false);
-      setIsBusinessOverviewTouched(false);
-      return;
-    }
-    if (activeFormStep === 2 && (isSaving || coreServicesStatus === "saving")) {
-      return;
-    }
-    if (activeFormStep === 3 && faqStatus === "saving") {
-      return;
-    }
-    setActiveFormStep((previousStep) =>
-      Math.min(previousStep + 1, MAX_RENDERED_FORM_STEP)
-    );
-  }
-
-  function handleGoToPreviousStep() {
-    if (activeFormStep <= 1) {
-      return;
-    }
-    setActiveFormStep((previousStep) => Math.max(1, previousStep - 1));
-    setDidFailSave(true);
-    setIsBusinessNameTouched(false);
-    setIsBusinessPhoneNumberTouched(false);
-    setIsBusinessOverviewTouched(false);
-  }
-
-  function handleEnableGreetingEdit(isEnabled: boolean) {
-    setIsEditingGreeting(isEnabled);
-    setGreetingStatus("idle");
-    greetingAbortControllerRef.current?.abort();
-  }
-
-  function handleGreetingSaveAndClose() {
-    const trimmedGreeting = greetingDraft.trim();
-    if (trimmedGreeting === "") {
-      setGreetingDraft(DEFAULT_GREETING_MESSAGE);
-    }
-    debouncedSaveGreeting(
-      trimmedGreeting === "" ? DEFAULT_GREETING_MESSAGE : trimmedGreeting
-    );
-    setIsEditingGreeting(false);
-  }
-
-  function handleGreetingCancelEdit() {
-    setGreetingDraft(greetingOriginal);
-    handleEnableGreetingEdit(false);
-    setGreetingStatus("idle");
-  }
-
   const sidebarBusinessLabel = user?.name ?? "Your Business";
   const isFirstFormStep = activeFormStep === 1;
   const isCoreServicesStep = activeFormStep === 2;
-  const isFaqStep = activeFormStep === 3;
   const isGreetingStep = activeFormStep === 4;
   const hasRecordingDisclaimer = useMemo(
     () => greetingDraft.includes(RECORDING_DISCLAIMER_SENTENCE),
@@ -1012,43 +799,6 @@ export default function QuickStart() {
       return { ...step, status: "upcoming" as const };
     });
   }, [activeFormStep]);
-  const progressLabel = `${activeFormStep}/${TOTAL_FORM_STEPS}`;
-  const progressFillPercentage =
-    (Math.min(Math.max(activeFormStep, 0), TOTAL_FORM_STEPS) /
-      TOTAL_FORM_STEPS) *
-    100;
-  const shouldShowNextButton =
-    isFirstFormStep && (!hasPendingProfileChanges || didFailSave) && !isSaving;
-
-  const shouldEnableSaveButton =
-    isFirstFormStep && hasPendingProfileChanges && !didFailSave && !isSaving;
-
-  const primaryButtonLabel = isSaving
-    ? "Saving..."
-    : shouldShowNextButton
-    ? "Next"
-    : shouldEnableSaveButton
-    ? "Save Changes"
-    : didFailSave
-    ? "Next"
-    : "Saved";
-
-  const primaryButtonType: "button" | "submit" = shouldEnableSaveButton
-    ? "submit"
-    : "button";
-  const isPrimaryButtonDisabled =
-    !shouldEnableSaveButton && !shouldShowNextButton && !didFailSave;
-  const primaryButtonOnClick = shouldShowNextButton
-    ? () => {
-        handleGoToNextStep();
-      }
-    : shouldEnableSaveButton
-    ? undefined
-    : didFailSave
-    ? () => {
-        handleGoToNextStep();
-      }
-    : undefined;
 
   function handleRecordingDisclaimerToggle() {
     setGreetingDraft((previous) => {
@@ -1592,62 +1342,6 @@ export default function QuickStart() {
                     </div>
                   </>
                 ) : null}
-
-                {formStepCopy.greetingCard ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: "24px",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "12px",
-                        maxWidth: "640px",
-                      }}
-                    >
-                      <h3
-                        style={{
-                          margin: 0,
-                          fontSize: "20px",
-                          color: "var(--text-heading)",
-                        }}
-                      >
-                        {formStepCopy.greetingCard.highlightTitle}
-                      </h3>
-                      <p
-                        style={{
-                          margin: 0,
-                          color: "var(--text-secondary)",
-                          lineHeight: 1.6,
-                        }}
-                      >
-                        {formStepCopy.greetingCard.highlightDescription}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleNavigateToGreeting}
-                      style={{
-                        borderRadius: "999px",
-                        border: "none",
-                        background: "var(--brand-gradient)",
-                        color: "var(--text-inverse)",
-                        fontWeight: 700,
-                        padding: "12px 28px",
-                        boxShadow: "var(--shadow-elevated-strong)",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {formStepCopy.greetingCard.primaryActionLabel}
-                    </button>
-                  </div>
-                ) : null}
               </form>
             </section>
           ) : null}
@@ -1900,63 +1594,6 @@ export default function QuickStart() {
                       />
                       Recording disclaimer included
                     </label>
-                    <button
-                      type="button"
-                      onClick={handleResetGreeting}
-                      style={{
-                        borderRadius: "999px",
-                        border: `1px solid ${FORM_FIELD_BORDER_COLOR}`,
-                        padding: "8px 18px",
-                        backgroundColor: "var(--surface-highlight)",
-                        color: "var(--brand-primary-strong)",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Reset
-                    </button>
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={handlePlayGreeting}
-                      disabled={isPlayingGreeting}
-                      style={{
-                        borderRadius: "999px",
-                        border: "none",
-                        padding: "10px 24px",
-                        background: "var(--brand-gradient)",
-                        color: "var(--text-inverse)",
-                        fontWeight: 600,
-                        boxShadow: "var(--shadow-elevated-strong)",
-                        cursor: isPlayingGreeting ? "not-allowed" : "pointer",
-                        opacity: isPlayingGreeting ? 0.7 : 1,
-                      }}
-                    >
-                      {isPlayingGreeting ? "Playing…" : "Play greeting"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRecordingDisclaimerUpdate}
-                      style={{
-                        borderRadius: "999px",
-                        border: `1px solid ${FORM_FIELD_BORDER_COLOR}`,
-                        padding: "10px 24px",
-                        backgroundColor: "var(--surface-highlight)",
-                        color: "var(--brand-primary-strong)",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Update recording disclaimer
-                    </button>
                   </div>
                 </div>
 
@@ -1971,43 +1608,7 @@ export default function QuickStart() {
                     fontSize: "13px",
                   }}
                 >
-                  <span>
-                    Changes save automatically when you stop typing. Need ideas?
-                    Try our sample greeting.
-                  </span>
-                  <div style={{ display: "flex", gap: "10px" }}>
-                    <button
-                      type="button"
-                      onClick={handleUseSampleGreeting}
-                      style={{
-                        borderRadius: "999px",
-                        border: `1px solid ${FORM_FIELD_BORDER_COLOR}`,
-                        padding: "8px 18px",
-                        backgroundColor: "var(--surface-highlight)",
-                        color: "var(--brand-primary-strong)",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Use sample greeting
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleEditGreeting}
-                      style={{
-                        borderRadius: "999px",
-                        border: "none",
-                        padding: "10px 22px",
-                        background: "var(--brand-gradient)",
-                        color: "var(--text-inverse)",
-                        fontWeight: 600,
-                        boxShadow: "var(--shadow-elevated-strong)",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {isEditingGreeting ? "Save" : "Edit"}
-                    </button>
-                  </div>
+                  <span>Changes save automatically when you stop typing.</span>
                 </footer>
               </article>
 
